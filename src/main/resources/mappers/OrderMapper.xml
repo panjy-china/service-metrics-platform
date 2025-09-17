@@ -3,7 +3,7 @@
 
 <mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper">
 
-    <!-- 结果映射：订单信息 -->
+    <!-- Order Result Map -->
     <resultMap id="OrderResultMap" type="org.panjy.servicemetricsplatform.entity.Order">
         <result column="colID" property="colID"/>
         <result column="colPickingID" property="colPickingID"/>
@@ -65,33 +65,22 @@
         <result column="colCounty" property="colCounty"/>
     </resultMap>
 
-    <!-- 根据地址模糊查询返回客户ID列表 -->
-    <select id="findCustomerIdsByAddressLike" resultType="string">
-        SELECT colCltID
+    <!-- Get total sales amount for specified time period -->
+    <select id="getTotalSalesAmount" resultType="java.math.BigDecimal">
+        SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order
-        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
-        AND colCltID IS NOT NULL
-        AND colCltID != ''
+        WHERE colOdrTim &gt;= #{startTime}
+        AND colOdrTim &lt;= #{endTime}
+        AND colTotal &gt; 0
     </select>
 
-    <!-- 根据地址模糊查询返回订单信息（包含客户ID） -->
-    <select id="findOrdersByAddressLike" resultMap="OrderResultMap">
-        SELECT colID, colCltID, colName, colAddress, colProvince, colCity, colCounty,
-               colOdrTim, colTotal, colOrderAmt, colBillStatus
+    <!-- Get total customer count for specified time period -->
+    <select id="getTotalCustomerCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT colCltID) as customerCount
         FROM aikang.tbl_Order
-        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
-        AND colCltID IS NOT NULL
-        AND colCltID != ''
-        ORDER BY colOdrTim DESC
-    </select>
-
-    <!-- 根据地址模糊查询返回不重复的客户ID列表 -->
-    <select id="findDistinctCustomerIdsByAddressLike" resultType="string">
-        SELECT DISTINCT colCltID
-        FROM aikang.tbl_Order
-        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
-        AND colCltID IS NOT NULL
-        AND colCltID != ''
+        WHERE colOdrTim &gt;= #{startTime}
+        AND colOdrTim &lt;= #{endTime}
+        AND colTotal &gt; 0
     </select>
 
 </mapper>

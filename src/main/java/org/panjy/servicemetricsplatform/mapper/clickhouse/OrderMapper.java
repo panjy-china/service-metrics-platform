@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.Order;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -14,23 +15,20 @@ import java.util.List;
 public interface OrderMapper {
     
     /**
-     * 根据地址模糊查询返回客户ID列表
-     * @param addressKeyword 地址关键词
-     * @return 客户ID列表
+     * 查询指定时间段的总成交额
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 总成交额
      */
-    List<String> findCustomerIdsByAddressLike(@Param("addressKeyword") String addressKeyword);
+    BigDecimal getTotalSalesAmount(@Param("startTime") String startTime, 
+                                   @Param("endTime") String endTime);
     
     /**
-     * 根据地址模糊查询返回订单信息（包含客户ID）
-     * @param addressKeyword 地址关键词
-     * @return 订单列表
+     * 查询指定时间段的总成交客户数
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 成交客户数
      */
-    List<Order> findOrdersByAddressLike(@Param("addressKeyword") String addressKeyword);
-    
-    /**
-     * 根据地址模糊查询返回不重复的客户ID列表
-     * @param addressKeyword 地址关键词
-     * @return 不重复的客户ID列表
-     */
-    List<String> findDistinctCustomerIdsByAddressLike(@Param("addressKeyword") String addressKeyword);
+    Long getTotalCustomerCount(@Param("startTime") String startTime, 
+                               @Param("endTime") String endTime);
 }

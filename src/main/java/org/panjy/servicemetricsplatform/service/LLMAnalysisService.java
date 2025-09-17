@@ -2,6 +2,7 @@ package org.panjy.servicemetricsplatform.service;
 
 import org.panjy.servicemetricsplatform.entity.Conversation;
 import org.panjy.servicemetricsplatform.entity.Message;
+import org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress;
 import org.panjy.servicemetricsplatform.mapper.mysql.MessageMapper;
 import org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
@@ -22,6 +24,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParser;
 
 @Service
 public class LLMAnalysisService {
@@ -31,6 +36,9 @@ public class LLMAnalysisService {
     
     @Autowired
     private MessageMapper messageMapper;
+    
+    @Autowired
+    private WechatMessageAnalyzeAddressService addressService;
 
     private static final String QWEN_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
     private static final String QWEN_MODEL = "qwen-max";
@@ -183,13 +191,684 @@ public class LLMAnalysisService {
     }
 
     /**
-     * 使用大模型分析消息中的地址信息
+     * 使用大模型分析消息中的地址信息并返回Message列表
      * 默认批量大小为10
      * @param messages 消息列表
-     * @return 分析结果的JSON格式字符串
+     * @return 包含地址分析结果的Message列表
      */
-    public String analyzeAddressWithLLM(List<Message> messages) throws Exception {
-        return analyzeAddressWithLLM(messages, 10);
+    public List<Message> analyzeAddressWithLLMAsMessages(List<Message> messages) throws Exception {
+        return analyzeAddressWithLLMAsMessages(messages, 10);
+    }
+
+    /**
+     * 使用大模型分析消息中的地址信息并返回Message列表
+     * @param messages 消息列表
+     * @param batchSize 批量处理大小
+     * @return 包含地址分析结果的Message列表
+     */
+    public List<Message> analyzeAddressWithLLMAsMessages(List<Message> messages, int batchSize) throws Exception {
+        if (messages == null || messages.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Message> resultMessages = new ArrayList<>();
+        int total = messages.size();
+        int processedCount = 0;
+
+        // 分批处理消息
+        for (int i = 0; i < messages.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, messages.size());
+            List<Message> batch = messages.subList(i, endIndex);
+            
+            try {
+                List<Message> batchResult = processBatchAddressAsMessages(batch, i / batchSize + 1);
+                resultMessages.addAll(batchResult);
+                processedCount += batch.size();
+                
+                System.out.println("已处理批次 " + (i / batchSize + 1) + ", 消息数: " + batch.size() + ", 提取地址数: " + batchResult.size());
+                
+                // 批次间添加短暂延迟，避免API限流
+                if (i + batchSize < messages.size()) {
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                System.err.println("处理批次 " + (i / batchSize + 1) + " 时发生错误: " + e.getMessage());
+                // 继续处理下一批次，但记录错误信息
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println("地址分析完成 - 总消息数: " + total + ", 已处理: " + processedCount + ", 提取地址数: " + resultMessages.size());
+        return resultMessages;
+    }
+
+    /**
+     * 处理单批次消息的地址分析并返回Message列表
+     * @param batch 消息批次
+     * @param batchNumber 批次号
+     * @return 该批次提取的地址Message列表
+     */
+    private List<Message> processBatchAddressAsMessages(List<Message> batch, int batchNumber) throws Exception {
+        String jsonResult = processBatchAddress(batch, batchNumber);
+        return parseAddressJsonToMessages(jsonResult, batch);
+    }
+
+    /**
+     * 将地址分析的JSON结果解析为Message列表
+     * @param jsonResult LLM返回的JSON分析结果
+     * @param originalBatch 原始消息批次（用于补充信息）
+     * @return 解析后的Message列表
+     */
+    private List<Message> parseAddressJsonToMessages(String jsonResult, List<Message> originalBatch) {
+        List<Message> messages = new ArrayList<>();
+        
+        try {
+            // 预处理JSON字符串，处理控制字符和格式问题
+            String cleanedJsonResult = preprocessJsonString(jsonResult);
+            
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 配置ObjectMapper以更宽松地处理JSON
+            objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+            objectMapper.configure(JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
+            
+            JsonNode rootNode = objectMapper.readTree(cleanedJsonResult);
+            
+            // 处理addresses数组
+            JsonNode addressesNode = rootNode.get("addresses");
+            if (addressesNode != null && addressesNode.isArray()) {
+                for (JsonNode addressNode : addressesNode) {
+                    if (addressNode.get("is_real_address") != null && 
+                        addressNode.get("is_real_address").asBoolean()) {
+                        
+                        String sender = addressNode.get("sender") != null ? 
+                                      addressNode.get("sender").asText() : "未知";
+                        String originalContent = addressNode.get("original_content") != null ? 
+                                                addressNode.get("original_content").asText() : "";
+                        String standardizedAddress = addressNode.get("standardized_address") != null ? 
+                                                    addressNode.get("standardized_address").asText() : "";
+                        double confidence = addressNode.get("confidence") != null ? 
+                                          addressNode.get("confidence").asDouble() : 0.0;
+                        
+                        // 查找对应的原始消息获取时间信息
+                        LocalDateTime chatTime = null;
+                        for (Message originalMsg : originalBatch) {
+                            if (sender.equals(originalMsg.getSender()) && 
+                                originalContent.equals(originalMsg.getMessage())) {
+                                chatTime = originalMsg.getChatTime();
+                                break;
+                            }
+                        }
+                        
+                        if (chatTime == null) {
+                            chatTime = LocalDateTime.now();
+                        }
+                        
+                        // 创建新的Message对象，包含地址信息
+                        Message addressMessage = new Message();
+                        addressMessage.setSender(sender);
+                        addressMessage.setMessage("地址分析结果: " + standardizedAddress + 
+                                                " (原文: " + originalContent + 
+                                                ", 置信度: " + String.format("%.2f", confidence) + ")");
+                        addressMessage.setType("AddressAnalysis");
+                        addressMessage.setChatTime(chatTime);
+                        
+                        messages.add(addressMessage);
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("解析地址分析JSON结果时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 如果解析失败，创建一个错误信息的Message
+            Message errorMessage = new Message();
+            errorMessage.setSender("系统");
+            errorMessage.setMessage("地址分析结果解析失败: " + e.getMessage());
+            errorMessage.setType("Error");
+            errorMessage.setChatTime(LocalDateTime.now());
+            messages.add(errorMessage);
+        }
+        
+        return messages;
+    }
+    
+    /**
+     * 预处理JSON字符串，处理控制字符和格式问题
+     * @param jsonString 原始JSON字符串
+     * @return 清理后的JSON字符串
+     */
+    private String preprocessJsonString(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return jsonString;
+        }
+        
+        String cleaned = jsonString;
+        
+        try {
+            // 1. 首先尝试从内容中提取纯JSON部分
+            String extractedJson = extractJsonFromContent(cleaned);
+            if (extractedJson != null && !extractedJson.isEmpty()) {
+                cleaned = extractedJson;
+            }
+            
+            // 2. 处理过度转义的问题
+            // 检查是否存在双重转义（如 \\n 应该变成 \n）
+            if (cleaned.contains("\\\\")) {
+                // 处理双重反斜杠转义
+                cleaned = cleaned.replace("\\\\", "\\");
+            }
+            
+            // 3. 修复可能的引号问题
+            cleaned = fixQuotationMarks(cleaned);
+            
+            // 4. 验证和修复JSON结构
+            cleaned = validateAndFixJsonStructure(cleaned);
+            
+            // 5. 最后尝试简单验证JSON是否可解析
+            try {
+                ObjectMapper testMapper = new ObjectMapper();
+                testMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+                testMapper.readTree(cleaned);
+                // 如果能成功解析，直接返回
+                return cleaned;
+            } catch (Exception parseTest) {
+                // 如果解析失败，进行更深层的清理
+                cleaned = deepCleanJsonString(cleaned);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("预处理JSON字符串时发生错误: " + e.getMessage());
+            // 如果预处理失败，返回原始字符串
+            return jsonString;
+        }
+        
+        return cleaned;
+    }
+    
+    /**
+     * 深度清理JSON字符串
+     * @param jsonString JSON字符串
+     * @return 清理后的JSON字符串
+     */
+    private String deepCleanJsonString(String jsonString) {
+        String cleaned = jsonString;
+        
+        // 处理控制字符，但保留JSON中合法的转义序列
+        StringBuilder result = new StringBuilder();
+        boolean inString = false;
+        boolean escaped = false;
+        
+        for (int i = 0; i < cleaned.length(); i++) {
+            char c = cleaned.charAt(i);
+            
+            if (escaped) {
+                // 前一个字符是反斜杠，这个字符是转义字符
+                result.append(c);
+                escaped = false;
+                continue;
+            }
+            
+            if (c == '\\') {
+                // 遇到反斜杠，检查下一个字符
+                if (i + 1 < cleaned.length()) {
+                    char nextChar = cleaned.charAt(i + 1);
+                    // 如果下一个字符是合法的转义字符，保留反斜杠
+                    if (nextChar == '"' || nextChar == '\\' || nextChar == 'n' || 
+                        nextChar == 'r' || nextChar == 't' || nextChar == 'b' || 
+                        nextChar == 'f' || nextChar == 'u' || nextChar == '/') {
+                        result.append(c);
+                        escaped = true;
+                    }
+                    // 否则跳过这个反斜杠
+                } else {
+                    // 如果反斜杠是最后一个字符，跳过
+                }
+                continue;
+            }
+            
+            if (c == '"' && !escaped) {
+                inString = !inString;
+            }
+            
+            // 如果是控制字符且不在字符串内，跳过
+            if (!inString && c < 32 && c != '\n' && c != '\r' && c != '\t') {
+                continue;
+            }
+            
+            result.append(c);
+        }
+        
+        return result.toString();
+    }
+    
+    /**
+     * 修复引号标记问题
+     * @param jsonString JSON字符串
+     * @return 修复后的JSON字符串
+     */
+    private String fixQuotationMarks(String jsonString) {
+        // 处理中文引号问题
+        return jsonString
+                .replace("“", "\"")
+                .replace("”", "\"")
+                .replace("‘", "'")
+                .replace("’", "'");
+    }
+    
+    /**
+     * 验证和修复JSON结构
+     * @param jsonString JSON字符串
+     * @return 修复后的JSON字符串
+     */
+    private String validateAndFixJsonStructure(String jsonString) {
+        String trimmed = jsonString.trim();
+        
+        // 确保JSON以{开始和}结束
+        if (!trimmed.startsWith("{")) {
+            int startIndex = trimmed.indexOf("{");
+            if (startIndex != -1) {
+                trimmed = trimmed.substring(startIndex);
+            }
+        }
+        
+        if (!trimmed.endsWith("}")) {
+            int endIndex = trimmed.lastIndexOf("}");
+            if (endIndex != -1) {
+                trimmed = trimmed.substring(0, endIndex + 1);
+            }
+        }
+        
+        return trimmed;
+    }
+    
+    /**
+     * 分析消息中的地址信息并存储到数据库
+     * @param messages 消息列表
+     * @return 存储的地址分析结果数量
+     */
+    public int analyzeAndStoreAddresses(List<Message> messages) throws Exception {
+        return analyzeAndStoreAddresses(messages, 10);
+    }
+    
+    /**
+     * 简化版本：分析消息中的地址信息并存储到数据库
+     * 使用新的 executeSimple 方法进行批量存储
+     * @param messages 消息列表
+     * @param batchSize 批量处理大小
+     * @return 存储的地址分析结果数量
+     */
+    public int analyzeAndStoreAddressesSimple(List<Message> messages, int batchSize) throws Exception {
+        if (messages == null || messages.isEmpty()) {
+            return 0;
+        }
+        
+        List<WechatMessageAnalyzeAddress> addressRecords = new ArrayList<>();
+        int total = messages.size();
+        int processedCount = 0;
+        
+        System.out.println("开始分析并存储地址信息（简化模式），总消息数: " + total);
+        
+        // 分批处理消息
+        for (int i = 0; i < messages.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, messages.size());
+            List<Message> batch = messages.subList(i, endIndex);
+            
+            try {
+                List<WechatMessageAnalyzeAddress> batchAddresses = 
+                    processBatchAddressForStorage(batch, i / batchSize + 1);
+                addressRecords.addAll(batchAddresses);
+                processedCount += batch.size();
+                
+                System.out.println("已处理批次 " + (i / batchSize + 1) + 
+                                 ", 消息数: " + batch.size() + 
+                                 ", 提取地址数: " + batchAddresses.size());
+                
+                // 批次间添加短暂延迟，避免API限流
+                if (i + batchSize < messages.size()) {
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                System.err.println("处理批次 " + (i / batchSize + 1) + " 时发生错误: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        // 使用简化方法进行批量存储
+        int savedCount = 0;
+        if (!addressRecords.isEmpty()) {
+            try {
+                savedCount = addressService.executeBatchSimple(addressRecords);
+                System.out.println("地址分析和存储完成（简化模式） - 总消息数: " + total + 
+                                 ", 已处理: " + processedCount + 
+                                 ", 提取地址数: " + addressRecords.size() + 
+                                 ", 成功存储: " + savedCount);
+            } catch (Exception e) {
+                System.err.println("批量存储地址分析结果失败（简化模式）: " + e.getMessage());
+                throw new RuntimeException("存储地址分析结果失败", e);
+            }
+        }
+        
+        return savedCount;
+    }
+    
+    /**
+     * 完整版本：分析消息中的地址信息并存储到数据库
+     * 返回详细的执行结果信息
+     * @param messages 消息列表
+     * @param batchSize 批量处理大小
+     * @return 执行结果对象，包含成功状态和详细信息
+     */
+    public WechatMessageAnalyzeAddressService.ExecuteResult analyzeAndStoreAddressesWithDetails(List<Message> messages, int batchSize) throws Exception {
+        WechatMessageAnalyzeAddressService.ExecuteResult finalResult = new WechatMessageAnalyzeAddressService.ExecuteResult();
+        
+        if (messages == null || messages.isEmpty()) {
+            finalResult.setSuccess(true);
+            finalResult.setMessage("输入消息列表为空，无需处理");
+            finalResult.setData(0);
+            return finalResult;
+        }
+        
+        try {
+            List<WechatMessageAnalyzeAddress> addressRecords = new ArrayList<>();
+            int total = messages.size();
+            int processedCount = 0;
+            List<String> processingLogs = new ArrayList<>();
+            
+            processingLogs.add("开始分析并存储地址信息（完整模式），总消息数: " + total);
+            
+            // 分批处理消息
+            for (int i = 0; i < messages.size(); i += batchSize) {
+                int endIndex = Math.min(i + batchSize, messages.size());
+                List<Message> batch = messages.subList(i, endIndex);
+                
+                try {
+                    List<WechatMessageAnalyzeAddress> batchAddresses = 
+                        processBatchAddressForStorage(batch, i / batchSize + 1);
+                    addressRecords.addAll(batchAddresses);
+                    processedCount += batch.size();
+                    
+                    String logMsg = "已处理批次 " + (i / batchSize + 1) + 
+                                   ", 消息数: " + batch.size() + 
+                                   ", 提取地址数: " + batchAddresses.size();
+                    processingLogs.add(logMsg);
+                    System.out.println(logMsg);
+                    
+                    // 批次间添加短暂延迟，避免API限流
+                    if (i + batchSize < messages.size()) {
+                        Thread.sleep(1000);
+                    }
+                } catch (Exception e) {
+                    String errorMsg = "处理批次 " + (i / batchSize + 1) + " 时发生错误: " + e.getMessage();
+                    processingLogs.add("[错误] " + errorMsg);
+                    System.err.println(errorMsg);
+                    e.printStackTrace();
+                }
+            }
+            
+            // 使用完整方法进行批量存储
+            if (!addressRecords.isEmpty()) {
+                WechatMessageAnalyzeAddressService.ExecuteResult result = addressService.executeBatch(addressRecords);
+                
+                if (result.isSuccess()) {
+                    int savedCount = (Integer) result.getData();
+                    String successMsg = "地址分析和存储完成（完整模式） - 总消息数: " + total + 
+                                      ", 已处理: " + processedCount + 
+                                      ", 提取地址数: " + addressRecords.size() + 
+                                      ", 成功存储: " + savedCount;
+                    processingLogs.add(successMsg);
+                    System.out.println(successMsg);
+                    
+                    finalResult.setSuccess(true);
+                    finalResult.setMessage("地址分析和存储成功");
+                    
+                    // 添加详细信息到结果中
+                    Map<String, Object> details = new HashMap<>();
+                    details.put("totalMessages", total);
+                    details.put("processedMessages", processedCount);
+                    details.put("extractedAddresses", addressRecords.size());
+                    details.put("savedAddresses", savedCount);
+                    details.put("processingLogs", processingLogs);
+                    details.put("storageResult", result);
+                    
+                    finalResult.setData(details);
+                } else {
+                    finalResult.setSuccess(false);
+                    finalResult.setMessage("批量存储地址分析结果失败: " + result.getMessage());
+                    finalResult.setErrorCode(result.getErrorCode());
+                    finalResult.setException(result.getException());
+                }
+            } else {
+                finalResult.setSuccess(true);
+                finalResult.setMessage("没有提取到有效的地址信息");
+                finalResult.setData(0);
+            }
+            
+        } catch (Exception e) {
+            finalResult.setSuccess(false);
+            finalResult.setMessage("地址分析和存储过程中发生错误: " + e.getMessage());
+            finalResult.setErrorCode("ANALYSIS_ERROR");
+            finalResult.setException(e);
+            System.err.println("地址分析和存储过程中发生错误: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return finalResult;
+    }
+    
+    /**
+     * 分析消息中的地址信息并存储到数据库
+     * @param messages 消息列表
+     * @param batchSize 批量处理大小
+     * @return 存储的地址分析结果数量
+     */
+    public int analyzeAndStoreAddresses(List<Message> messages, int batchSize) throws Exception {
+        if (messages == null || messages.isEmpty()) {
+            return 0;
+        }
+        
+        List<WechatMessageAnalyzeAddress> addressRecords = new ArrayList<>();
+        int total = messages.size();
+        int processedCount = 0;
+        
+        System.out.println("开始分析并存储地址信息，总消息数: " + total);
+        
+        // 分批处理消息
+        for (int i = 0; i < messages.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, messages.size());
+            List<Message> batch = messages.subList(i, endIndex);
+            
+            try {
+                List<WechatMessageAnalyzeAddress> batchAddresses = 
+                    processBatchAddressForStorage(batch, i / batchSize + 1);
+                addressRecords.addAll(batchAddresses);
+                processedCount += batch.size();
+                
+                System.out.println("已处理批次 " + (i / batchSize + 1) + 
+                                 ", 消息数: " + batch.size() + 
+                                 ", 提取地址数: " + batchAddresses.size());
+                
+                // 批次间添加短暂延迟，避免API限流
+                if (i + batchSize < messages.size()) {
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                System.err.println("处理批次 " + (i / batchSize + 1) + " 时发生错误: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        // 批量存储到数据库
+        int savedCount = 0;
+        if (!addressRecords.isEmpty()) {
+            try {
+                // 使用新的服务方法进行批量存储
+                WechatMessageAnalyzeAddressService.ExecuteResult result = addressService.executeBatch(addressRecords);
+                if (result.isSuccess()) {
+                    savedCount = (Integer) result.getData();
+                    System.out.println("地址分析和存储完成 - 总消息数: " + total + 
+                                     ", 已处理: " + processedCount + 
+                                     ", 提取地址数: " + addressRecords.size() + 
+                                     ", 成功存储: " + savedCount);
+                } else {
+                    System.err.println("批量存储地址分析结果失败: " + result.getMessage());
+                    if (result.getErrorCode() != null) {
+                        System.err.println("错误代码: " + result.getErrorCode());
+                    }
+                    throw new RuntimeException("存储地址分析结果失败: " + result.getMessage());
+                }
+            } catch (Exception e) {
+                System.err.println("批量存储地址分析结果失败: " + e.getMessage());
+                throw new RuntimeException("存储地址分析结果失败", e);
+            }
+        }
+        
+        return savedCount;
+    }
+    
+    /**
+     * 处理单批次消息的地址分析并转换为存储实体
+     * @param batch 消息批次
+     * @param batchNumber 批次号
+     * @return 该批次的地址分析结果实体列表
+     */
+    private List<WechatMessageAnalyzeAddress> processBatchAddressForStorage(List<Message> batch, int batchNumber) throws Exception {
+        String jsonResult = processBatchAddress(batch, batchNumber);
+        return parseAddressJsonToStorageEntities(jsonResult, batch);
+    }
+    
+    /**
+     * 将地址分析的JSON结果解析为存储实体列表
+     * @param jsonResult LLM返回的JSON分析结果
+     * @param originalBatch 原始消息批次（用于补充信息）
+     * @return 解析后的存储实体列表
+     */
+    private List<WechatMessageAnalyzeAddress> parseAddressJsonToStorageEntities(String jsonResult, List<Message> originalBatch) {
+        List<WechatMessageAnalyzeAddress> entities = new ArrayList<>();
+        
+        try {
+            // 预处理JSON字符串，处理控制字符和格式问题
+            String cleanedJsonResult = preprocessJsonString(jsonResult);
+            
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 配置ObjectMapper以更宽松地处理JSON
+            objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+            objectMapper.configure(JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
+            
+            JsonNode rootNode = objectMapper.readTree(cleanedJsonResult);
+            
+            // 处理addresses数组
+            JsonNode addressesNode = rootNode.get("addresses");
+            if (addressesNode != null && addressesNode.isArray()) {
+                for (JsonNode addressNode : addressesNode) {
+                    if (addressNode.get("is_real_address") != null && 
+                        addressNode.get("is_real_address").asBoolean()) {
+                        
+                        String sender = addressNode.get("sender") != null ? 
+                                      addressNode.get("sender").asText() : "未知";
+                        String originalContent = addressNode.get("original_content") != null ? 
+                                                addressNode.get("original_content").asText() : "";
+                        String standardizedAddress = addressNode.get("standardized_address") != null ? 
+                                                    addressNode.get("standardized_address").asText() : "";
+                        double confidence = addressNode.get("confidence") != null ? 
+                                          addressNode.get("confidence").asDouble() : 0.0;
+                        
+                        // 查找对应的原始消息获取完整信息
+                        Message originalMessage = findOriginalMessage(sender, originalContent, originalBatch);
+                        if (originalMessage != null) {
+                            // 生成唯一ID（使用时间戳和发送者的hash）
+                            Long id = generateUniqueId(originalMessage);
+                            
+                            // 检查是否已存在
+                            if (!addressService.existsByWechatIdAndTime(sender, convertLocalDateTimeToTimestamp(originalMessage.getChatTime()))) {
+                                WechatMessageAnalyzeAddress entity = WechatMessageAnalyzeAddress.builder()
+                                        .wechatId(sender)
+                                        .msgType(convertMessageTypeToInt(originalMessage.getType()))
+                                        .wechatTime(convertLocalDateTimeToTimestamp(originalMessage.getChatTime()))
+                                        .content(originalContent)
+                                        .address(standardizedAddress + " (置信度: " + String.format("%.2f", confidence) + ")")
+                                        .build();
+                                
+                                entities.add(entity);
+                            } else {
+                                System.out.println("地址分析记录已存在，跳过: 微信ID=" + sender + ", 时间=" + convertLocalDateTimeToTimestamp(originalMessage.getChatTime()));
+                            }
+                        }
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("解析地址分析JSON结果为存储实体时发生错误: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return entities;
+    }
+    
+    /**
+     * 查找对应的原始消息
+     * @param sender 发送者
+     * @param content 消息内容
+     * @param batch 消息批次
+     * @return 匹配的原始消息
+     */
+    private Message findOriginalMessage(String sender, String content, List<Message> batch) {
+        for (Message msg : batch) {
+            if (sender.equals(msg.getSender()) && content.equals(msg.getMessage())) {
+                return msg;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 生成唯一ID
+     * @param message 消息对象
+     * @return 唯一ID
+     */
+    private Long generateUniqueId(Message message) {
+        // 使用发送者、消息内容和时间的组合生成唯一ID
+        String combined = message.getSender() + "_" + message.getMessage() + "_" + 
+                         (message.getChatTime() != null ? message.getChatTime().toString() : System.currentTimeMillis());
+        return Math.abs((long) combined.hashCode());
+    }
+    
+    /**
+     * 将消息类型转换为整数
+     * @param messageType 消息类型字符串
+     * @return 整数类型
+     */
+    private Integer convertMessageTypeToInt(String messageType) {
+        if (messageType == null) return 1;
+        
+        switch (messageType.toLowerCase()) {
+            case "text":
+            case "addressanalysis":
+                return 1;
+            case "picture":
+            case "wxpic":
+                return 3;
+            case "voice":
+            case "wxvoice":
+                return 34;
+            case "miniprogram":
+                return 49;
+            default:
+                return 1; // 默认为文本类型
+        }
+    }
+    
+    /**
+     * 将LocalDateTime转换为时间戳（毫秒）
+     * @param localDateTime LocalDateTime对象
+     * @return 时间戳（毫秒）
+     */
+    private Long convertLocalDateTimeToTimestamp(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return System.currentTimeMillis();
+        }
+        return localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     /**
@@ -293,7 +972,7 @@ public class LLMAnalysisService {
             
             // 验证返回的是否为有效JSON
             if (isValidJson(extractedContent)) {
-                // 如果包含markdown代码块，进一步提取纯正JSON
+                // 如果包含代码块，进一步提取纯正JSON
                 String cleanJson = extractJsonFromContent(extractedContent);
                 if (cleanJson != null && !cleanJson.isEmpty()) {
                     return cleanJson;
@@ -322,12 +1001,10 @@ public class LLMAnalysisService {
                 int endIdx = findMatchingQuote(response, start + 1);
                 if (start > 0 && endIdx > start) {
                     String content = response.substring(start + 1, endIdx);
-                    // 处理转义字符
-                    content = content.replace("\\n", "\n")
-                                    .replace("\\\\", "\\")
-                                    .replace("\\\"", "\"");
+                    // 改进转义字符处理，避免过度转义
+                    content = unescapeJsonString(content);
                     
-                    // 尝试从内容中提取JSON（处理markdown代码块格式）
+                    // 尝试从内容中提取JSON（处理代码块格式）
                     String extractedJson = extractJsonFromContent(content);
                     if (extractedJson != null && !extractedJson.isEmpty()) {
                         return extractedJson;
@@ -342,9 +1019,72 @@ public class LLMAnalysisService {
             return response;
         }
     }
+    
+    /**
+     * 解转JSON字符串中的转义字符
+     * @param jsonString 包含转义字符的JSON字符串
+     * @return 解转后的字符串
+     */
+    private String unescapeJsonString(String jsonString) {
+        if (jsonString == null || jsonString.isEmpty()) {
+            return jsonString;
+        }
+        
+        StringBuilder result = new StringBuilder();
+        boolean escaped = false;
+        
+        for (int i = 0; i < jsonString.length(); i++) {
+            char c = jsonString.charAt(i);
+            
+            if (escaped) {
+                switch (c) {
+                    case 'n':
+                        result.append('\n');
+                        break;
+                    case 'r':
+                        result.append('\r');
+                        break;
+                    case 't':
+                        result.append('\t');
+                        break;
+                    case 'b':
+                        result.append('\b');
+                        break;
+                    case 'f':
+                        result.append('\f');
+                        break;
+                    case '"':
+                        result.append('"');
+                        break;
+                    case '\\':
+                        result.append('\\');
+                        break;
+                    case '/':
+                        result.append('/');
+                        break;
+                    default:
+                        // 对于不识别的转义字符，保留原样
+                        result.append('\\').append(c);
+                        break;
+                }
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else {
+                result.append(c);
+            }
+        }
+        
+        // 如果最后还有未处理的转义字符
+        if (escaped) {
+            result.append('\\');
+        }
+        
+        return result.toString();
+    }
 
     /**
-     * 从内容中提取JSON格式数据（处理markdown代码块等格式）
+     * 从内容中提取JSON格式数据（处理代码块等格式）
      * @param content 内容字符串
      * @return 提取的JSON字符串
      */
@@ -353,11 +1093,11 @@ public class LLMAnalysisService {
             return null;
         }
         
-        // 处理markdown代码块格式
+        // 处理代码块格式
         String cleanContent = content.trim();
         
-        // 移除markdown代码块标记
-        if (cleanContent.startsWith("```json")) {
+        // 移除代码块标记
+        if (cleanContent.startsWith("``json")) {
             int startIndex = cleanContent.indexOf("\n");
             if (startIndex != -1) {
                 cleanContent = cleanContent.substring(startIndex + 1);
