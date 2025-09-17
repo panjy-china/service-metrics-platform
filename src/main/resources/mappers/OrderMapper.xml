@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper">
+
+    <!-- 结果映射：订单信息 -->
+    <resultMap id="OrderResultMap" type="org.panjy.servicemetricsplatform.entity.Order">
+        <result column="colID" property="colID"/>
+        <result column="colPickingID" property="colPickingID"/>
+        <result column="colCltID" property="colCltID"/>
+        <result column="colCltLvl" property="colCltLvl"/>
+        <result column="colEmpID" property="colEmpID"/>
+        <result column="colDptID" property="colDptID"/>
+        <result column="colDlvMod" property="colDlvMod"/>
+        <result column="colOrgID" property="colOrgID"/>
+        <result column="colOrdOrg" property="colOrdOrg"/>
+        <result column="colProvince" property="colProvince"/>
+        <result column="colCity" property="colCity"/>
+        <result column="colName" property="colName"/>
+        <result column="colAddress" property="colAddress"/>
+        <result column="colDesc" property="colDesc"/>
+        <result column="colPrice" property="colPrice"/>
+        <result column="colTotal" property="colTotal"/>
+        <result column="colCollectionsAmt" property="colCollectionsAmt"/>
+        <result column="colCollectionsAmtCmp" property="colCollectionsAmtCmp"/>
+        <result column="colTransportAmtCmp" property="colTransportAmtCmp"/>
+        <result column="colOrderAmt" property="colOrderAmt"/>
+        <result column="colResultAmt" property="colResultAmt"/>
+        <result column="colOdrTim" property="colOdrTim"/>
+        <result column="colCltSpScore" property="colCltSpScore"/>
+        <result column="colSpAmount" property="colSpAmount"/>
+        <result column="colCouponNo" property="colCouponNo"/>
+        <result column="colCouponSum" property="colCouponSum"/>
+        <result column="colDeductionSum" property="colDeductionSum"/>
+        <result column="colDeductionMaxSum" property="colDeductionMaxSum"/>
+        <result column="colPreStored" property="colPreStored"/>
+        <result column="colAwardSum" property="colAwardSum"/>
+        <result column="colOrderInt" property="colOrderInt"/>
+        <result column="colAfterDays" property="colAfterDays"/>
+        <result column="colCallBack" property="colCallBack"/>
+        <result column="colCallBackDesc" property="colCallBackDesc"/>
+        <result column="colReturn" property="colReturn"/>
+        <result column="colReasons" property="colReasons"/>
+        <result column="colReturnType" property="colReturnType"/>
+        <result column="colDeliveredTime" property="colDeliveredTime"/>
+        <result column="colIsEmpType" property="colIsEmpType"/>
+        <result column="colDutyDirector" property="colDutyDirector"/>
+        <result column="colVertifyPrice" property="colVertifyPrice"/>
+        <result column="colVertifyOtherOrder" property="colVertifyOtherOrder"/>
+        <result column="colVertifyPrm" property="colVertifyPrm"/>
+        <result column="colCltEmpID" property="colCltEmpID"/>
+        <result column="colCltDptID" property="colCltDptID"/>
+        <result column="PaymentTime" property="paymentTime"/>
+        <result column="PaymentBank" property="paymentBank"/>
+        <result column="colMemo" property="colMemo"/>
+        <result column="colOrderType" property="colOrderType"/>
+        <result column="colUsedAvlInt" property="colUsedAvlInt"/>
+        <result column="colAddAvlInt" property="colAddAvlInt"/>
+        <result column="colRcvMcdType" property="colRcvMcdType"/>
+        <result column="colResultAward" property="colResultAward"/>
+        <result column="colBillStatus" property="colBillStatus"/>
+        <result column="colOrderNature" property="colOrderNature"/>
+        <result column="colDest" property="colDest"/>
+        <result column="colFlag" property="colFlag"/>
+        <result column="colCounty" property="colCounty"/>
+    </resultMap>
+
+    <!-- 根据地址模糊查询返回客户ID列表 -->
+    <select id="findCustomerIdsByAddressLike" resultType="string">
+        SELECT colCltID
+        FROM aikang.tbl_Order
+        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
+        AND colCltID IS NOT NULL
+        AND colCltID != ''
+    </select>
+
+    <!-- 根据地址模糊查询返回订单信息（包含客户ID） -->
+    <select id="findOrdersByAddressLike" resultMap="OrderResultMap">
+        SELECT colID, colCltID, colName, colAddress, colProvince, colCity, colCounty,
+               colOdrTim, colTotal, colOrderAmt, colBillStatus
+        FROM aikang.tbl_Order
+        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
+        AND colCltID IS NOT NULL
+        AND colCltID != ''
+        ORDER BY colOdrTim DESC
+    </select>
+
+    <!-- 根据地址模糊查询返回不重复的客户ID列表 -->
+    <select id="findDistinctCustomerIdsByAddressLike" resultType="string">
+        SELECT DISTINCT colCltID
+        FROM aikang.tbl_Order
+        WHERE colAddress LIKE CONCAT('%', #{addressKeyword}, '%')
+        AND colCltID IS NOT NULL
+        AND colCltID != ''
+    </select>
+
+</mapper>

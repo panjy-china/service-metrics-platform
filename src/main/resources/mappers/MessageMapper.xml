@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.MessageMapper">
+    <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
+        <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
+        <id property="wechatId" column="wechatId"/>
+
+        <!-- Conversation 的日期（取消息时间的日期部分） -->
+        <result property="date" column="chatTime"/>
+
+        <!-- 映射 Message 列表 -->
+        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.Message">
+            <result property="sender" column="sender"/>
+            <result property="message" column="message"/>
+            <result property="type" column="type"/>
+            <result property="chatTime" column="chatTime"/>
+        </collection>
+    </resultMap>
+
+    <select id="findConversationsByDate" resultMap="ConversationResultMap">
+        SELECT
+            wechat_id           AS wechatId,
+            content             AS message,
+            wechat_id           AS sender,
+            msg_type            AS type,
+            FROM_UNIXTIME(wechat_time / 1000)  AS chatTime
+        FROM wechat_messages_a
+        WHERE DATE (FROM_UNIXTIME(wechat_time / 1000)) BETWEEN #{date} AND DATE_ADD(#{date}, INTERVAL 1 DAY) - INTERVAL 1 SECOND
+          AND content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND CHAR_LENGTH(content) > 10        -- 字数大于 10
+        ORDER BY wechat_account_id, create_time ASC;
+    </select>
+    <select id="findMessagesLikeAddress" resultType="org.panjy.servicemetricsplatform.entity.Message">
+        <!-- 模糊匹配地址 存在 省、市、县、乡、镇、村、区任意一个字即返回 -->
+        <!-- 参数 date 仅查询 date 以后的数据 -->
+        SELECT
+            wechat_id           AS sender,
+            content             AS message,
+            msg_type            AS type,
+            FROM_UNIXTIME(wechat_time / 1000)  AS chatTime
+        FROM wechat_messages_a
+        WHERE FROM_UNIXTIME(wechat_time / 1000) >= #{date}
+          AND (
+              content LIKE '%省%' OR
+              content LIKE '%市%' OR
+              content LIKE '%县%' OR
+              content LIKE '%乡%' OR
+              content LIKE '%镇%' OR
+              content LIKE '%村%' OR
+              content LIKE '%区%'
+          )
+          AND content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND CHAR_LENGTH(content) > 2
+        ORDER BY wechat_time ASC
+    </select>
+</mapper>
+

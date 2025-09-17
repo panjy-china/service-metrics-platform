@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.WechatGroupMessageMapper">
+
+    <select id="findActiveUsers" resultType="java.lang.String">
+        SELECT DISTINCT sender
+        FROM wechat_group_message w
+        WHERE FROM_UNIXTIME(w.wechat_time/1000) &gt;= DATE_SUB(#{checkTime}, INTERVAL 3 DAY)
+            AND FROM_UNIXTIME(w.wechat_time/1000) &lt;= #{checkTime}
+            AND w.sender != ""
+    </select>
+    <select id="findUserServived" resultType="java.lang.String">
+        SELECT w.sender AS wechat_id
+        FROM wechat_group_message w
+        WHERE DATE(w.wechat_time / 1000) BETWEEN DATE(#{checkTime}) AND DATE_ADD(DATE(#{checkTime}), INTERVAL #{days} DAY)
+        GROUP BY w.sender
+        HAVING COUNT(DISTINCT DATE(w.wechat_time / 1000)) = #{days};
+    </select>
+
+    <select id="findInactiveUsers" resultType="java.lang.String">
+        SELECT t.wechat_id
+        FROM (
+                 -- 第一步：找到 startTime 当天活跃过的用户
+                 SELECT DISTINCT wgm.wechat_id AS wechat_id
+                 FROM wechat_group_message wgm
+                 WHERE DATE(FROM_UNIXTIME(wgm.wechat_time / 1000))
+                           BETWEEN DATE(#{startTime}) AND DATE_ADD(DATE(#{startTime}), INTERVAL 1 DAY)
+             ) t
+        WHERE t.wechat_id NOT IN (
+            -- 第二步：排除 7 天内仍然活跃的用户
+            SELECT u1.wechat_id
+            FROM wechat_group_message u1
+            WHERE FROM_UNIXTIME(u1.wechat_time / 1000) &lt;= DATE_ADD(#{startTime}, INTERVAL 7 DAY)
+            GROUP BY u1.wechat_id
+            HAVING MAX(DATE(FROM_UNIXTIME(u1.wechat_time / 1000))) &gt;= DATE_ADD(DATE(#{startTime}), INTERVAL 5 DAY)
+        )
+    </select>
+
+</mapper>

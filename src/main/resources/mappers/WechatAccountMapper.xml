@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.WechatAccountMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, wechat_id, device_account_id, imei, device_memo, account_user_name,
+        account_real_name, account_nickname, ke_fu_alive, device_alive, wechat_alive,
+        yesterday_msg_count, seven_day_msg_count, thirty_day_msg_count,
+        total_friend, male_friend, female_friend, wechat_group_name, tenant_id,
+        nickname, alias, avatar, gender, region, signature, bind_qq, bind_email,
+        bind_mobile, create_time, current_device_id, is_deleted, delete_time,
+        group_id, memo, wechat_version, last_update_time
+    </sql>
+    <!-- 查询所有微信账号 -->
+    <select id="selectAll" resultType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+        SELECT <include refid="Base_Column_List"/>
+        FROM wechat_account
+        ORDER BY id DESC
+    </select>
+    
+    <!-- 查询所有微信账号的微信ID -->
+    <select id="selectAllWechatIds" resultType="java.lang.String">
+        SELECT wechat_id FROM wechat_account
+    </select>
+
+</mapper>
