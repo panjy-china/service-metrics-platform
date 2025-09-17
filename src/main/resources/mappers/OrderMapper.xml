@@ -83,4 +83,13 @@
         AND colTotal &gt; 0
     </select>
 
+    <!-- Get total order count for specified time period -->
+    <select id="getTotalOrderCount" resultType="java.lang.Long">
+        SELECT COUNT(*) as orderCount
+        FROM aikang.tbl_Order
+        WHERE colOdrTim &gt;= #{startTime}
+        AND colOdrTim &lt;= #{endTime}
+        AND colTotal &gt; 0
+    </select>
+
 </mapper>

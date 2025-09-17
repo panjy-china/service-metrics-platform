@@ -56,7 +56,7 @@ public class ExportUserMetricsRunner implements CommandLineRunner {
 //                // 4. 流失率
 //                double churnRate = strategicLayerService.getChurnRate(currentDay);
 //
-//                // 5. 平均服务时间（小时）
+//                // 5. 平均服务时间（天）
 //                double avgServiceTime = strategicLayerService.getAverageServiceTime(currentDay);
 //
 //                // 写入一行

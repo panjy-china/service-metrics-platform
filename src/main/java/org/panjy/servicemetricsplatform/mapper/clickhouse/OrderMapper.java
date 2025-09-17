@@ -31,4 +31,13 @@ public interface OrderMapper {
      */
     Long getTotalCustomerCount(@Param("startTime") String startTime, 
                                @Param("endTime") String endTime);
+    
+    /**
+     * 查询指定时间段的总订单数
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 总订单数
+     */
+    Long getTotalOrderCount(@Param("startTime") String startTime, 
+                            @Param("endTime") String endTime);
 }

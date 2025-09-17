@@ -62,8 +62,7 @@ public class AnalysisAddressController {
             }
             
             // 限制处理数量，避免超时
-            List<Message> limitedMessages = messagesLikeAddress.size() > 5 ? 
-                messagesLikeAddress.subList(0, 5) : messagesLikeAddress;
+            List<Message> limitedMessages = messagesLikeAddress;
             
             System.out.println("找到包含地址关键词的消息数量: " + messagesLikeAddress.size() + 
                              ", 实际处理数量: " + limitedMessages.size());
