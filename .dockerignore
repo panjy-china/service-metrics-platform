@@ -1,0 +1,59 @@
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# IDE相关
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Maven相关
+target/
+!target/service-metrics-platform-0.0.1-SNAPSHOT.jar
+.mvn/
+mvnw
+mvnw.cmd
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# 日志文件
+logs/
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Docker相关
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 文档文件
+README.md
+*.md
+
+# 测试相关
+src/test/
+
+# 配置文件（生产环境敏感信息）
+application-dev.yml
+application-local.yml
+
+# 其他不需要的文件
+node_modules/
+*.jar
+!target/service-metrics-platform-0.0.1-SNAPSHOT.jar

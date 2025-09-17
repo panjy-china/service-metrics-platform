@@ -1,0 +1,96 @@
+# 生产环境配置
+spring:
+  profiles:
+    active: prod
+    
+  datasource:
+    mysql:
+      # 生产环境数据库连接配置（需要根据实际情况修改）
+      jdbc-url: ${MYSQL_URL:jdbc:mysql://rm-uf6itdd69r9j2b45ato.mysql.rds.aliyuncs.com:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&connectionTimeZone=LOCAL}
+      username: ${MYSQL_USERNAME:jcs}
+      password: ${MYSQL_PASSWORD:Jueceshu2021}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        
+    clickhouse:
+      # ClickHouse数据库连接配置（需要根据实际情况修改）
+      jdbc-url: ${CLICKHOUSE_URL:jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION}
+      username: ${CLICKHOUSE_USERNAME:default}
+      password: ${CLICKHOUSE_PASSWORD:123456}
+      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+      
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Shanghai
+        show_sql: false
+        format_sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mappers/*.xml
+  type-aliases-package: org.panjy.servicemetricsplatform.entity
+  config-location: classpath:mybatis-config.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
+    max-connections: 10000
+    accept-count: 100
+    connection-timeout: 20000
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    org.panjy.servicemetricsplatform: INFO
+    org.springframework.web: INFO
+    org.mybatis: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /app/logs/service-metrics-platform.log
+    max-size: 100MB
+    max-history: 30
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    db:
+      enabled: true
+
+# LLM配置
+dashscope:
+  apiKey: ${DASHSCOPE_API_KEY:sk-4d14608f5c5d40eb926fcd2f44258e20}

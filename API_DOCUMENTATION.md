@@ -6,7 +6,7 @@ Service Metrics Platform 是一个服务指标分析平台，提供微信相关�
 
 ## 基础信息
 
-- **Base URL**: `http://localhost:8080`
+- **Base URL**: `http://47.100.81.66:9172`
 - **API Version**: v1
 - **Content-Type**: `application/json`
 - **响应格式**: JSON
