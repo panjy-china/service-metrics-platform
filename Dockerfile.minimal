@@ -1,4 +1,4 @@
-# 使用OpenJDK 21作为基础镜像
+# 使用OpenJDK 21作为基础镜像 - 最小化版本
 FROM openjdk:21-jdk-slim
 
 # 设置维护者信息
@@ -8,23 +8,6 @@ LABEL description="Service Metrics Platform - 微信服务指标分析平台"
 
 # 设置工作目录
 WORKDIR /app
-
-# 配置国内镜像源以提高下载速度（适配新版Debian）
-RUN if [ -f /etc/apt/sources.list ]; then \
-        sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-        sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list; \
-    fi && \
-    if [ -d /etc/apt/sources.list.d ]; then \
-        echo 'deb http://mirrors.aliyun.com/debian/ bookworm main' > /etc/apt/sources.list.d/aliyun.list && \
-        echo 'deb http://mirrors.aliyun.com/debian-security/ bookworm-security main' >> /etc/apt/sources.list.d/aliyun.list; \
-    fi
-
-# 安装必要的系统依赖
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    vim \
-    && rm -rf /var/lib/apt/lists/*
 
 # 创建应用用户（安全最佳实践）
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -49,9 +32,9 @@ RUN mkdir -p /app/logs && chown -R appuser:appuser /app
 # 切换到应用用户
 USER appuser
 
-# 健康检查 - 使用wget（如果可用）或跳过
+# 健康检查 - 简化版本
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT}/api/order-metrics/health || exit 1
+    CMD curl -f http://localhost:${SERVER_PORT}/api/order-metrics/health || exit 1
 
 # 暴露端口
 EXPOSE 9712

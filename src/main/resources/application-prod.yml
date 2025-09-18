@@ -1,7 +1,5 @@
 # 生产环境配置
 spring:
-  profiles:
-    active: prod
     
   datasource:
     mysql:
@@ -53,7 +51,7 @@ mybatis:
 
 # 服务器配置
 server:
-  port: 8080
+  port: ${SERVER_PORT:9712}
   servlet:
     context-path: /
   tomcat:

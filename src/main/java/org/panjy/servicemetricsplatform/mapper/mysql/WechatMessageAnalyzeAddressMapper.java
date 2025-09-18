@@ -98,4 +98,10 @@ public interface WechatMessageAnalyzeAddressMapper {
      * @return 记录总数
      */
     Long countAll();
+    
+    /**
+     * 查询每个用户的最新地址（排除北京大兴）
+     * @return 用户地址列表
+     */
+    List<String> getUserLatestAddresses();
 }

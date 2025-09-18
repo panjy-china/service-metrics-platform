@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.ClientMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="ClientResultMap" type="org.panjy.servicemetricsplatform.entity.Client">
+        <result column="colCltID" property="colCltID"/>
+        <result column="colEmpID" property="colEmpID"/>
+        <result column="colDptID" property="colDptID"/>
+        <result column="colPhs" property="colPhs"/>
+        <result column="colName" property="colName"/>
+        <result column="colGender" property="colGender"/>
+        <result column="colAddress" property="colAddress"/>
+        <result column="colProvince" property="colProvince"/>
+        <result column="colCity" property="colCity"/>
+        <result column="colAge" property="colAge"/>
+        <result column="colZip" property="colZip"/>
+        <result column="colQQ" property="colQQ"/>
+        <result column="colMSN" property="colMSN"/>
+        <result column="colDemo" property="colDemo"/>
+        <result column="colCrtTim" property="colCrtTim"/>
+        <result column="colEnable" property="colEnable"/>
+        <result column="colLevel" property="colLevel"/>
+        <result column="colMediaID" property="colMediaID"/>
+        <result column="collastlogintime" property="collastlogintime"/>
+        <result column="colProfession" property="colProfession"/>
+        <result column="colActivity" property="colActivity"/>
+        <result column="colRecommend" property="colRecommend"/>
+        <result column="colHeight" property="colHeight"/>
+        <result column="colWeight" property="colWeight"/>
+        <result column="colWaist" property="colWaist"/>
+        <result column="colBust" property="colBust"/>
+        <result column="colCataLog" property="colCataLog"/>
+        <result column="colArea" property="colArea"/>
+        <result column="colBloodType" property="colBloodType"/>
+        <result column="colHealth" property="colHealth"/>
+        <result column="colIncome" property="colIncome"/>
+        <result column="colAttrClass" property="colAttrClass"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        colCltID, colEmpID, colDptID, colPhs, colName, colGender, colAddress, 
+        colProvince, colCity, colAge, colZip, colQQ, colMSN, colDemo, colCrtTim, 
+        colEnable, colLevel, colMediaID, collastlogintime, colProfession, colActivity, 
+        colRecommend, colHeight, colWeight, colWaist, colBust, colCataLog, colArea, 
+        colBloodType, colHealth, colIncome, colAttrClass
+    </sql>
+
+    <!-- 查询备注信息有效的客户列表 -->
+    <select id="selectClientsWithValidDemo" resultMap="ClientResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/>
+        FROM aikang.tbl_Client
+        WHERE <![CDATA[ colDemo IS NOT NULL 
+            AND length(colDemo) >= 20 
+            AND colDemo NOT LIKE '%成单%' 
+            AND colDemo NOT LIKE '%下单%' ]]>
+        ORDER BY colCrtTim DESC
+    </select>
+
+    <!-- 批量更新客户分析结果 -->
+    <update id="batchUpdateClientAnalysisResult">
+        <foreach collection="clients" item="client" separator=";">
+            ALTER TABLE aikang.tbl_Client UPDATE 
+                colGender = #{client.colGender},
+                colAge = #{client.colAge},
+                colHeight = #{client.colHeight},
+                colWeight = #{client.colWeight}
+        WHERE colCltID LIKE #{client.colCltID} || '%'
+        </foreach>
+    </update>
+
+    <!-- 更新单个客户的分析结果 -->
+    <update id="updateClientAnalysisResult">
+        ALTER TABLE aikang.tbl_Client UPDATE 
+            colGender = #{client.colGender},
+            colAge = #{client.colAge},
+            colHeight = #{client.colHeight},
+            colWeight = #{client.colWeight}
+        WHERE colCltID LIKE #{client.colCltID} || '%'
+    </update>
+
+</mapper>
