@@ -112,5 +112,152 @@ public class ClientController {
             return ResponseEntity.status(500).body(response);
         }
     }
-
+    
+    /**
+     * 获取客户性别分布数据
+     * GET /api/clients/gender-distribution
+     * 
+     * @return 性别分布数据，包含性别和对应人数
+     */
+    @GetMapping("/gender-distribution")
+    public ResponseEntity<Map<String, Object>> getGenderDistribution() {
+        try {
+            log.info("接收到获取客户性别分布请求");
+            
+            List<Map<String, Object>> genderDistribution = clientService.getGenderDistribution();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", genderDistribution);
+            response.put("total", genderDistribution != null ? genderDistribution.size() : 0);
+            
+            log.info("返回客户性别分布数据，共{}条记录", 
+                    genderDistribution != null ? genderDistribution.size() : 0);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("获取客户性别分布失败", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "查询失败: " + e.getMessage());
+            response.put("data", null);
+            response.put("total", 0);
+            
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 获取客户年龄分布数据
+     * GET /api/clients/age-distribution
+     * 
+     * @return 年龄分布数据，包含年龄段和对应人数
+     */
+    @GetMapping("/age-distribution")
+    public ResponseEntity<Map<String, Object>> getAgeDistribution() {
+        try {
+            log.info("接收到获取客户年龄分布请求");
+            
+            List<Map<String, Object>> ageDistribution = clientService.getAgeDistribution();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", ageDistribution);
+            response.put("total", ageDistribution != null ? ageDistribution.size() : 0);
+            
+            log.info("返回客户年龄分布数据，共{}条记录", 
+                    ageDistribution != null ? ageDistribution.size() : 0);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("获取客户年龄分布失败", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "查询失败: " + e.getMessage());
+            response.put("data", null);
+            response.put("total", 0);
+            
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 获取客户体重分布数据
+     * GET /api/clients/weight-distribution
+     * 
+     * @return 体重分布数据，包含体重范围和对应人数
+     */
+    @GetMapping("/weight-distribution")
+    public ResponseEntity<Map<String, Object>> getWeightDistribution() {
+        try {
+            log.info("接收到获取客户体重分布请求");
+            
+            List<Map<String, Object>> weightDistribution = clientService.getWeightDistribution();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", weightDistribution);
+            response.put("total", weightDistribution != null ? weightDistribution.size() : 0);
+            
+            log.info("返回客户体重分布数据，共{}条记录", 
+                    weightDistribution != null ? weightDistribution.size() : 0);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("获取客户体重分布失败", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "查询失败: " + e.getMessage());
+            response.put("data", null);
+            response.put("total", 0);
+            
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 获取客户身高分布数据
+     * GET /api/clients/height-distribution
+     * 
+     * @return 身高分布数据，包含身高范围和对应人数
+     */
+    @GetMapping("/height-distribution")
+    public ResponseEntity<Map<String, Object>> getHeightDistribution() {
+        try {
+            log.info("接收到获取客户身高分布请求");
+            
+            List<Map<String, Object>> heightDistribution = clientService.getHeightDistribution();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", heightDistribution);
+            response.put("total", heightDistribution != null ? heightDistribution.size() : 0);
+            
+            log.info("返回客户身高分布数据，共{}条记录", 
+                    heightDistribution != null ? heightDistribution.size() : 0);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("获取客户身高分布失败", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "查询失败: " + e.getMessage());
+            response.put("data", null);
+            response.put("total", 0);
+            
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 客户信息业务逻辑服务类
@@ -401,6 +402,100 @@ public class ClientService {
         }
         
         return updatedClients;
+    }
+    
+    /**
+     * 查询客户性别分布
+     * 
+     * @return 性别分布数据列表，包含性别和对应人数
+     */
+    public List<Map<String, Object>> getGenderDistribution() {
+        try {
+            log.info("开始查询客户性别分布");
+            
+            List<Map<String, Object>> genderDistribution = clientMapper.selectGenderDistribution();
+            
+            log.info("查询客户性别分布完成，共找到{}条记录", 
+                    genderDistribution != null ? genderDistribution.size() : 0);
+            
+            return genderDistribution;
+            
+        } catch (Exception e) {
+            log.error("查询客户性别分布失败", e);
+            throw new RuntimeException("查询性别分布失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 查询客户年龄分布
+     * 
+     * @return 年龄分布数据列表，包含年龄段和对应人数
+     */
+    public List<Map<String, Object>> getAgeDistribution() {
+        try {
+            log.info("开始查询客户年龄分布");
+            
+            List<Map<String, Object>> ageDistribution = clientMapper.selectAgeDistribution();
+            if (ageDistribution != null && ageDistribution.size() > 0) {
+                ageDistribution = ageDistribution.subList(1, ageDistribution.size());
+            }
+            log.info("查询客户年龄分布完成，共找到{}条记录", 
+                    ageDistribution != null ? ageDistribution.size() : 0);
+            
+            return ageDistribution;
+            
+        } catch (Exception e) {
+            log.error("查询客户年龄分布失败", e);
+            throw new RuntimeException("查询年龄分布失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 查询客户体重分布
+     * 
+     * @return 体重分布数据列表，包含体重范围和对应人数
+     */
+    public List<Map<String, Object>> getWeightDistribution() {
+        try {
+            log.info("开始查询客户体重分布");
+            
+            List<Map<String, Object>> weightDistribution = clientMapper.selectWeightDistribution();
+            if(weightDistribution != null && weightDistribution.size() > 0){
+                weightDistribution = weightDistribution.subList(1, weightDistribution.size());
+            }
+            log.info("查询客户体重分布完成，共找到{}条记录", 
+                    weightDistribution != null ? weightDistribution.size() : 0);
+            
+            return weightDistribution;
+            
+        } catch (Exception e) {
+            log.error("查询客户体重分布失败", e);
+            throw new RuntimeException("查询体重分布失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 查询客户身高分布
+     * 
+     * @return 身高分布数据列表，包含身高范围和对应人数
+     */
+    public List<Map<String, Object>> getHeightDistribution() {
+        try {
+            log.info("开始查询客户身高分布");
+            
+            List<Map<String, Object>> heightDistribution = clientMapper.selectHeightDistribution();
+            if(heightDistribution != null && heightDistribution.size() > 0){
+                heightDistribution = heightDistribution.subList(1, heightDistribution.size());
+            }
+            log.info("查询客户身高分布完成，共找到{}条记录", 
+                    heightDistribution != null ? heightDistribution.size() : 0);
+            
+            return heightDistribution;
+            
+        } catch (Exception e) {
+            log.error("查询客户身高分布失败", e);
+            throw new RuntimeException("查询身高分布失败: " + e.getMessage(), e);
+        }
     }
     
     /**

@@ -80,5 +80,94 @@
             colWeight = #{client.colWeight}
         WHERE colCltID LIKE #{client.colCltID} || '%'
     </update>
+    
+    <!-- 查询性别分布 （男、女） -->
+    <select id="selectGenderDistribution" resultType="java.util.Map">
+        SELECT 
+            colGender as gender,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colGender IS NOT NULL
+        AND (colGender = '男' OR colGender = '女')
+        GROUP BY colGender
+        ORDER BY colGender
+    </select>
 
+    <!-- 查询年龄分布 -->
+    <select id="selectAgeDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colAge &lt; 18 THEN '未成年'
+                WHEN colAge &lt; 25 THEN '18-24岁'
+                WHEN colAge &lt; 35 THEN '25-34岁'
+                WHEN colAge &lt; 45 THEN '35-44岁'
+                WHEN colAge &lt; 55 THEN '45-54岁'
+                ELSE '55岁以上'
+            END as ageGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colAge IS NOT NULL
+        GROUP BY ageGroup
+        ORDER BY 
+            CASE ageGroup
+                WHEN '未成年' THEN 1
+                WHEN '18-24岁' THEN 2
+                WHEN '25-34岁' THEN 3
+                WHEN '35-44岁' THEN 4
+                WHEN '45-54岁' THEN 5
+                ELSE 6
+            END
+    </select>
+
+    <!-- 查询体重分布 -->
+    <select id="selectWeightDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colWeight &lt; 40 THEN '40kg以下'
+                WHEN colWeight &lt; 50 THEN '40-50kg'
+                WHEN colWeight &lt; 60 THEN '50-60kg'
+                WHEN colWeight &lt; 70 THEN '60-70kg'
+                WHEN colWeight &lt; 80 THEN '70-80kg'
+                ELSE '80kg以上'
+            END as weightGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colWeight IS NOT NULL
+        GROUP BY weightGroup
+        ORDER BY 
+            CASE weightGroup
+                WHEN '40kg以下' THEN 1
+                WHEN '40-50kg' THEN 2
+                WHEN '50-60kg' THEN 3
+                WHEN '60-70kg' THEN 4
+                WHEN '70-80kg' THEN 5
+                ELSE 6
+            END
+    </select>
+
+    <!-- 获取身高分布 -->
+    <select id="selectHeightDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colHeight &lt; 150 THEN '150cm以下'
+                WHEN colHeight &lt; 160 THEN '150-159cm'
+                WHEN colHeight &lt; 170 THEN '160-169cm'
+                WHEN colHeight &lt; 180 THEN '170-179cm'
+                WHEN colHeight &lt; 190 THEN '180-189cm'
+                ELSE '190cm以上'
+            END as heightGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colHeight IS NOT NULL
+        GROUP BY heightGroup
+        ORDER BY 
+            CASE heightGroup
+                WHEN '150cm以下' THEN 1
+                WHEN '150-159cm' THEN 2
+                WHEN '160-169cm' THEN 3
+                WHEN '170-179cm' THEN 4
+                WHEN '180-189cm' THEN 5
+                ELSE 6
+            END
+    </select>
 </mapper>

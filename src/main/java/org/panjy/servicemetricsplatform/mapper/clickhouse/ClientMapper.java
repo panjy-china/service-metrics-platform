@@ -5,6 +5,7 @@ import org.panjy.servicemetricsplatform.entity.Client;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 客户信息Mapper接口
@@ -41,4 +42,32 @@ public interface ClientMapper {
      * @return 更新的记录数
      */
     int updateClientAnalysisResult(@Param("client") Client client);
+    
+    /**
+     * 查询年龄分布（男、女）
+     * 
+     * @return 年龄分布数据列表
+     */
+    List<Map<String, Object>> selectAgeDistribution();
+    
+    /**
+     * 查询性别分布（男、女）
+     * 
+     * @return 性别分布数据列表
+     */
+    List<Map<String, Object>> selectGenderDistribution();
+    
+    /**
+     * 查询体重分布
+     * 
+     * @return 体重分布数据列表
+     */
+    List<Map<String, Object>> selectWeightDistribution();
+    
+    /**
+     * 查询身高分布
+     * 
+     * @return 身高分布数据列表
+     */
+    List<Map<String, Object>> selectHeightDistribution();
 }
