@@ -301,7 +301,7 @@ public class StrategicLayerService {
         for (String wechatId : firstActivityMap.keySet()) {
             Date firstTime = firstActivityMap.get(wechatId);
             Date lastTime = lastActivityMap.get(wechatId);
-//            System.out.println(firstTime + " " + lastTime);
+        // System.out.println(firstTime + " " + lastTime);
             if (firstTime != null && lastTime != null && lastTime.after(firstTime)) {
                 totalDurationMillis += (lastTime.getTime() - firstTime.getTime());
                 validCount++;

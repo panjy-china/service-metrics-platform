@@ -128,4 +128,18 @@
         FROM wechat_message_a_analyze_address
     </select>
     
+    <!-- 查询每个用户的最新地址（排除北京大兴） -->
+    <select id="getUserLatestAddresses" resultType="java.lang.String">
+        <![CDATA[
+        SELECT MAX(address) AS address
+        FROM wechat_message_a_analyze_address
+        WHERE address NOT LIKE '%北京%大兴%'
+          AND address IS NOT NULL
+          AND address != ''
+          AND address != '未识别'
+          AND address != '提取失败'
+        GROUP BY wechat_id
+        ]]>
+    </select>
+    
 </mapper>

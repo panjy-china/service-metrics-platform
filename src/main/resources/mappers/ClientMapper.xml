@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.ClientMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="ClientResultMap" type="org.panjy.servicemetricsplatform.entity.Client">
+        <result column="colCltID" property="colCltID"/>
+        <result column="colEmpID" property="colEmpID"/>
+        <result column="colDptID" property="colDptID"/>
+        <result column="colPhs" property="colPhs"/>
+        <result column="colName" property="colName"/>
+        <result column="colGender" property="colGender"/>
+        <result column="colAddress" property="colAddress"/>
+        <result column="colProvince" property="colProvince"/>
+        <result column="colCity" property="colCity"/>
+        <result column="colAge" property="colAge"/>
+        <result column="colZip" property="colZip"/>
+        <result column="colQQ" property="colQQ"/>
+        <result column="colMSN" property="colMSN"/>
+        <result column="colDemo" property="colDemo"/>
+        <result column="colCrtTim" property="colCrtTim"/>
+        <result column="colEnable" property="colEnable"/>
+        <result column="colLevel" property="colLevel"/>
+        <result column="colMediaID" property="colMediaID"/>
+        <result column="collastlogintime" property="collastlogintime"/>
+        <result column="colProfession" property="colProfession"/>
+        <result column="colActivity" property="colActivity"/>
+        <result column="colRecommend" property="colRecommend"/>
+        <result column="colHeight" property="colHeight"/>
+        <result column="colWeight" property="colWeight"/>
+        <result column="colWaist" property="colWaist"/>
+        <result column="colBust" property="colBust"/>
+        <result column="colCataLog" property="colCataLog"/>
+        <result column="colArea" property="colArea"/>
+        <result column="colBloodType" property="colBloodType"/>
+        <result column="colHealth" property="colHealth"/>
+        <result column="colIncome" property="colIncome"/>
+        <result column="colAttrClass" property="colAttrClass"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        colCltID, colEmpID, colDptID, colPhs, colName, colGender, colAddress, 
+        colProvince, colCity, colAge, colZip, colQQ, colMSN, colDemo, colCrtTim, 
+        colEnable, colLevel, colMediaID, collastlogintime, colProfession, colActivity, 
+        colRecommend, colHeight, colWeight, colWaist, colBust, colCataLog, colArea, 
+        colBloodType, colHealth, colIncome, colAttrClass
+    </sql>
+
+    <!-- 查询备注信息有效的客户列表 -->
+    <select id="selectClientsWithValidDemo" resultMap="ClientResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/>
+        FROM aikang.tbl_Client
+        WHERE <![CDATA[ colDemo IS NOT NULL 
+            AND length(colDemo) >= 20 
+            AND colDemo NOT LIKE '%成单%' 
+            AND colDemo NOT LIKE '%下单%' ]]>
+        ORDER BY colCrtTim DESC
+    </select>
+
+    <!-- 批量更新客户分析结果 -->
+    <update id="batchUpdateClientAnalysisResult">
+        <foreach collection="clients" item="client" separator=";">
+            ALTER TABLE aikang.tbl_Client UPDATE 
+                colGender = #{client.colGender},
+                colAge = #{client.colAge},
+                colHeight = #{client.colHeight},
+                colWeight = #{client.colWeight}
+        WHERE colCltID LIKE #{client.colCltID} || '%'
+        </foreach>
+    </update>
+
+    <!-- 更新单个客户的分析结果 -->
+    <update id="updateClientAnalysisResult">
+        ALTER TABLE aikang.tbl_Client UPDATE 
+            colGender = #{client.colGender},
+            colAge = #{client.colAge},
+            colHeight = #{client.colHeight},
+            colWeight = #{client.colWeight}
+        WHERE colCltID LIKE #{client.colCltID} || '%'
+    </update>
+    
+    <!-- 查询性别分布 （男、女） -->
+    <select id="selectGenderDistribution" resultType="java.util.Map">
+        SELECT 
+            colGender as gender,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colGender IS NOT NULL
+        AND (colGender = '男' OR colGender = '女')
+        GROUP BY colGender
+        ORDER BY colGender
+    </select>
+
+    <!-- 查询年龄分布 -->
+    <select id="selectAgeDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colAge &lt; 18 THEN '未成年'
+                WHEN colAge &lt; 25 THEN '18-24岁'
+                WHEN colAge &lt; 35 THEN '25-34岁'
+                WHEN colAge &lt; 45 THEN '35-44岁'
+                WHEN colAge &lt; 55 THEN '45-54岁'
+                ELSE '55岁以上'
+            END as ageGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colAge IS NOT NULL
+        GROUP BY ageGroup
+        ORDER BY 
+            CASE ageGroup
+                WHEN '未成年' THEN 1
+                WHEN '18-24岁' THEN 2
+                WHEN '25-34岁' THEN 3
+                WHEN '35-44岁' THEN 4
+                WHEN '45-54岁' THEN 5
+                ELSE 6
+            END
+    </select>
+
+    <!-- 查询体重分布 -->
+    <select id="selectWeightDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colWeight &lt; 40 THEN '40kg以下'
+                WHEN colWeight &lt; 50 THEN '40-50kg'
+                WHEN colWeight &lt; 60 THEN '50-60kg'
+                WHEN colWeight &lt; 70 THEN '60-70kg'
+                WHEN colWeight &lt; 80 THEN '70-80kg'
+                ELSE '80kg以上'
+            END as weightGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colWeight IS NOT NULL
+        GROUP BY weightGroup
+        ORDER BY 
+            CASE weightGroup
+                WHEN '40kg以下' THEN 1
+                WHEN '40-50kg' THEN 2
+                WHEN '50-60kg' THEN 3
+                WHEN '60-70kg' THEN 4
+                WHEN '70-80kg' THEN 5
+                ELSE 6
+            END
+    </select>
+
+    <!-- 获取身高分布 -->
+    <select id="selectHeightDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE
+                WHEN colHeight &lt; 150 THEN '150cm以下'
+                WHEN colHeight &lt; 160 THEN '150-159cm'
+                WHEN colHeight &lt; 170 THEN '160-169cm'
+                WHEN colHeight &lt; 180 THEN '170-179cm'
+                WHEN colHeight &lt; 190 THEN '180-189cm'
+                ELSE '190cm以上'
+            END as heightGroup,
+            COUNT(*) as count
+        FROM aikang.tbl_Client
+        WHERE colHeight IS NOT NULL
+        GROUP BY heightGroup
+        ORDER BY 
+            CASE heightGroup
+                WHEN '150cm以下' THEN 1
+                WHEN '150-159cm' THEN 2
+                WHEN '160-169cm' THEN 3
+                WHEN '170-179cm' THEN 4
+                WHEN '180-189cm' THEN 5
+                ELSE 6
+            END
+    </select>
+</mapper>

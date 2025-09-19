@@ -10,9 +10,13 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @MapperScan(basePackages = "org.panjy.servicemetricsplatform.mapper.clickhouse", sqlSessionFactoryRef = "clickhouseSqlSessionFactory")
@@ -30,8 +34,13 @@ public class ClickHouseDataSourceConfig {
         bean.setDataSource(dataSource);
         // 设置MyBatis配置文件位置
         bean.setConfigLocation(new PathMatchingResourcePatternResolver().getResource("classpath:mybatis-config.xml"));
-        // ClickHouse只加载OrderMapper.xml
-        bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mappers/OrderMapper.xml"));
+        
+        // ClickHouse加载OrderMapper.xml和ClientMapper.xml - 分别获取资源并合并
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        List<Resource> mapperResources = new ArrayList<>();
+        mapperResources.addAll(Arrays.asList(resolver.getResources("classpath:mappers/OrderMapper.xml")));
+        mapperResources.addAll(Arrays.asList(resolver.getResources("classpath:mappers/ClientMapper.xml")));
+        bean.setMapperLocations(mapperResources.toArray(new Resource[0]));
         // 设置类型别名包
         bean.setTypeAliasesPackage("org.panjy.servicemetricsplatform.entity");
         return bean.getObject();

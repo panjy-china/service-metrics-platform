@@ -21,4 +21,17 @@ public class Conversation {
     private List<Message> messages;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime date;
+    
+    // 手动添加getter方法以确保编译通过
+    public String getWechatId() {
+        return wechatId;
+    }
+    
+    public List<Message> getMessages() {
+        return messages;
+    }
+    
+    public LocalDateTime getDate() {
+        return date;
+    }
 }

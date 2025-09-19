@@ -23,6 +23,40 @@ public class Message {
     // 标记是否已处理，避免重复处理
     private transient boolean processed = false;
 
+    // 手动添加getter方法以确保编译通过
+    public String getSender() {
+        return sender;
+    }
+    
+    public String getMessage() {
+        return message;
+    }
+    
+    public String getType() {
+        return type;
+    }
+    
+    public LocalDateTime getChatTime() {
+        return chatTime;
+    }
+    
+    public boolean isProcessed() {
+        return processed;
+    }
+    
+    // 手动添加setter方法
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
+    
+    public void setChatTime(LocalDateTime chatTime) {
+        this.chatTime = chatTime;
+    }
+    
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
     public Message(String sender, String message, String type, LocalDateTime chatTime) {
         this.sender = sender;
         this.chatTime = chatTime;

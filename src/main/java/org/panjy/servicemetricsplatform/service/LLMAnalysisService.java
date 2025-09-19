@@ -304,13 +304,12 @@ public class LLMAnalysisService {
                         }
                         
                         // 创建新的Message对象，包含地址信息
-                        Message addressMessage = new Message();
-                        addressMessage.setSender(sender);
-                        addressMessage.setMessage("地址分析结果: " + standardizedAddress + 
+                        Message addressMessage = new Message(sender, 
+                                                "地址分析结果: " + standardizedAddress + 
                                                 " (原文: " + originalContent + 
-                                                ", 置信度: " + String.format("%.2f", confidence) + ")");
-                        addressMessage.setType("AddressAnalysis");
-                        addressMessage.setChatTime(chatTime);
+                                                ", 置信度: " + String.format("%.2f", confidence) + ")",
+                                                "AddressAnalysis", 
+                                                chatTime);
                         
                         messages.add(addressMessage);
                     }
@@ -322,11 +321,10 @@ public class LLMAnalysisService {
             e.printStackTrace();
             
             // 如果解析失败，创建一个错误信息的Message
-            Message errorMessage = new Message();
-            errorMessage.setSender("系统");
-            errorMessage.setMessage("地址分析结果解析失败: " + e.getMessage());
-            errorMessage.setType("Error");
-            errorMessage.setChatTime(LocalDateTime.now());
+            Message errorMessage = new Message("系统", 
+                                              "地址分析结果解析失败: " + e.getMessage(),
+                                              "Error", 
+                                              LocalDateTime.now());
             messages.add(errorMessage);
         }
         
