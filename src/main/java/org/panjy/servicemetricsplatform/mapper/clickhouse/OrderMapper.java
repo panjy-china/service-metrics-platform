@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.Order;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -40,4 +41,43 @@ public interface OrderMapper {
      */
     Long getTotalOrderCount(@Param("startTime") String startTime, 
                             @Param("endTime") String endTime);
+    
+    /**
+     * 查询指定客户ID的最早下单时间
+     * @param clientId 客户ID
+     * @return 最早下单时间
+     */
+    LocalDateTime getEarliestOrderTimeByClientId(@Param("clientId") String clientId);
+    
+    /**
+     * 查询指定客户ID的最晚下单时间
+     * @param clientId 客户ID
+     * @return 最晚下单时间
+     */
+    LocalDateTime getLatestOrderTimeByClientId(@Param("clientId") String clientId);
+    
+    /**
+     * 查询所有客户的最早下单时间
+     * @return 最早下单时间
+     */
+    LocalDateTime getEarliestOrderTimeForAll();
+    
+    /**
+     * 查询所有客户的最晚下单时间
+     * @return 最晚下单时间
+     */
+    LocalDateTime getLatestOrderTimeForAll();
+    
+    /**
+     * 获取所有唯一的客户ID列表
+     * @return 客户ID列表
+     */
+    List<String> getAllUniqueClientIds();
+    
+    /**
+     * 查询指定日期之后首次出现在表中的用户ID
+     * @param date 指定日期
+     * @return 在指定日期之后首次下单的用户ID列表
+     */
+    List<String> getNewClientIdsAfterDate(@Param("date") LocalDateTime date);
 }

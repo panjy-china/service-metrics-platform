@@ -333,13 +333,47 @@ GET /api/strategic/overview-growth/2024-01-15
 
 ---
 
-## 2. 订单指标 API (Order Metrics)
+## 2. 地址分析 API (Address Analysis)
+
+**Base Path**: `/analyze/address`
+
+### 2.1 地址分析接口
+
+#### 2.1.1 分析指定日期包含地址的消息
+- **URL**: `GET /analyze/address/{date}`
+- **描述**: 分析指定日期包含地址关键词的消息，使用LLM提取地址信息并保存到数据库
+- **路径参数**:
+  - `date` (string, required): 分析日期，格式: `yyyy-MM-dd`
+
+**请求示例**:
+```
+GET /analyze/address/2024-01-15
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "地址分析处理完成",
+    "data": [...],
+    "totalFound": 10,
+    "processedCount": 10,
+    "extractedAddresses": 8,
+    "savedToDatabase": 8,
+    "queryDate": "2024-01-15",
+    "timestamp": 1705123456789
+}
+```
+
+---
+
+## 3. 订单指标 API (Order Metrics)
 
 **Base Path**: `/api/order-metrics`
 
-### 2.1 人均订单数接口
+### 3.1 人均订单数接口
 
-#### 2.1.1 指定月份人均订单数
+#### 3.1.1 指定月份人均订单数
 - **URL**: `GET /api/order-metrics/avg-orders-per-customer/{yearMonth}`
 - **描述**: 获取指定月份人均成交订单数
 - **路径参数**:
@@ -361,7 +395,7 @@ GET /api/order-metrics/avg-orders-per-customer/2024-01
 }
 ```
 
-#### 2.1.2 当月人均订单数
+#### 3.1.2 当月人均订单数
 - **URL**: `GET /api/order-metrics/avg-orders-per-customer`
 - **描述**: 获取当月人均成交订单数（向后兼容接口）
 
@@ -380,9 +414,9 @@ GET /api/order-metrics/avg-orders-per-customer
 }
 ```
 
-### 2.2 人均销售额接口
+### 3.2 人均销售额接口
 
-#### 2.2.1 指定月份人均销售额
+#### 3.2.1 指定月份人均销售额
 - **URL**: `GET /api/order-metrics/avg-sales-per-customer/{yearMonth}`
 - **描述**: 获取指定月份人均成交销售额
 - **路径参数**:
@@ -404,7 +438,7 @@ GET /api/order-metrics/avg-sales-per-customer/2024-01
 }
 ```
 
-#### 2.2.2 当月人均销售额
+#### 3.2.2 当月人均销售额
 - **URL**: `GET /api/order-metrics/avg-sales-per-customer`
 - **描述**: 获取当月人均成交销售额（向后兼容接口）
 
@@ -423,9 +457,9 @@ GET /api/order-metrics/avg-sales-per-customer
 }
 ```
 
-### 2.3 综合统计接口
+### 3.3 综合统计接口
 
-#### 2.3.1 指定月份综合统计
+#### 3.3.1 指定月份综合统计
 - **URL**: `GET /api/order-metrics/monthly-stats/{yearMonth}`
 - **描述**: 获取指定月份综合统计数据，包含同比增长率
 - **路径参数**:
@@ -457,7 +491,7 @@ GET /api/order-metrics/monthly-stats/2024-01
 }
 ```
 
-#### 2.3.2 当月综合统计
+#### 3.3.2 当月综合统计
 - **URL**: `GET /api/order-metrics/current-month-stats`
 - **描述**: 获取当月综合统计数据，包含同比增长率（向后兼容接口）
 
@@ -487,9 +521,9 @@ GET /api/order-metrics/current-month-stats
 }
 ```
 
-### 2.4 概览接口
+### 3.4 概览接口
 
-#### 2.4.1 订单指标概览
+#### 3.4.1 订单指标概览
 - **URL**: `GET /api/order-metrics/overview`
 - **描述**: 获取订单相关核心指标的概览，包含同比增长情况
 
@@ -518,9 +552,9 @@ GET /api/order-metrics/overview
 }
 ```
 
-### 2.5 健康检查接口
+### 3.5 健康检查接口
 
-#### 2.5.1 服务健康检查
+#### 3.5.1 服务健康检查
 - **URL**: `GET /api/order-metrics/health`
 - **描述**: 验证订单服务的可用性
 
@@ -537,6 +571,120 @@ GET /api/order-metrics/health
     "service": "OrderMetricsController",
     "status": "healthy",
     "timestamp": 1705123456789
+}
+```
+
+### 3.6 服务时间接口
+
+#### 3.6.1 获取指定客户的服务时间
+- **URL**: `GET /api/order-metrics/service-time/client/{clientId}`
+- **描述**: 获取指定客户的服务时间（最晚下单时间 - 最早下单时间）
+- **路径参数**:
+  - `clientId` (string, required): 客户ID
+
+**请求示例**:
+```
+GET /api/order-metrics/service-time/client/CUST001
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "查询成功",
+    "clientId": "CUST001",
+    "serviceTimeInDays": 15.5,
+    "description": "客户使用服务的时间（最晚下单时间 - 最早下单时间）"
+}
+```
+
+#### 3.6.2 获取所有客户的平均成交天数
+- **URL**: `GET /api/order-metrics/average-service-time`
+- **描述**: 获取所有客户的平均成交天数（最晚下单时间 - 最早下单时间）
+
+**请求示例**:
+```
+GET /api/order-metrics/average-service-time
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "查询成功",
+    "averageServiceTimeInDays": 22.3,
+    "description": "所有客户平均成交天数（最晚下单时间 - 最早下单时间）"
+}
+```
+
+### 3.7 客户分析接口
+
+#### 3.7.1 获取指定日期之后首次下单的客户列表
+- **URL**: `GET /api/order-metrics/new-clients-after/{dateStr}`
+- **描述**: 获取在指定日期之后首次下单的客户列表
+- **路径参数**:
+  - `dateStr` (string, required): 指定日期，格式: `yyyy-MM-dd HH:mm:ss`
+
+**请求示例**:
+```
+GET /api/order-metrics/new-clients-after/2024-01-01 00:00:00
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "查询成功",
+    "date": "2024-01-01 00:00:00",
+    "newClientCount": 15,
+    "newClientIds": ["CUST001", "CUST002", ...],
+    "description": "在指定日期之后首次下单的客户列表"
+}
+```
+
+#### 3.7.2 计算指定日期之后用户的十日成交转换率
+- **URL**: `GET /api/order-metrics/ten-day-conversion-rate/{dateStr}`
+- **描述**: 计算指定日期之后用户的十日成交转换率（服务时间在2天到10天之间的用户数 / 指定日期之后用户数）
+- **路径参数**:
+  - `dateStr` (string, required): 指定日期，格式: `yyyy-MM-dd HH:mm:ss`
+
+**请求示例**:
+```
+GET /api/order-metrics/ten-day-conversion-rate/2024-01-01 00:00:00
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "计算成功",
+    "date": "2024-01-01 00:00:00",
+    "conversionRate": 0.65,
+    "conversionRatePercentage": "65.00%",
+    "description": "十日成交转换率（服务时间在2天到10天之间的用户数 / 指定日期之后用户数）"
+}
+```
+
+#### 3.7.3 计算指定日期之后用户的十五日成交转换率
+- **URL**: `GET /api/order-metrics/fifteen-day-conversion-rate/{dateStr}`
+- **描述**: 计算指定日期之后用户的十五日成交转换率（服务时间在2天到15天之间的用户数 / 指定日期之后用户数）
+- **路径参数**:
+  - `dateStr` (string, required): 指定日期，格式: `yyyy-MM-dd HH:mm:ss`
+
+**请求示例**:
+```
+GET /api/order-metrics/fifteen-day-conversion-rate/2024-01-01 00:00:00
+```
+
+**响应示例**:
+```json
+{
+    "success": true,
+    "message": "计算成功",
+    "date": "2024-01-01 00:00:00",
+    "conversionRate": 0.78,
+    "conversionRatePercentage": "78.00%",
+    "description": "十五日成交转换率（服务时间在2天到15天之间的用户数 / 指定日期之后用户数）"
 }
 ```
 
@@ -584,4 +732,4 @@ curl -X GET "http://localhost:8080/api/order-metrics/monthly-stats/2024-01"
 
 ---
 
-*最后更新时间: 2024-01-15*
+*最后更新时间: 2025-09-19*

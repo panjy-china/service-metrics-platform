@@ -9,10 +9,13 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -358,5 +361,207 @@ public class OrderService {
     private Map<String, String> getCurrentMonthRange() {
         YearMonth currentMonth = YearMonth.now();
         return getMonthRange(currentMonth.toString());
+    }
+    
+    /**
+     * 计算指定客户的使用服务时间（最晚下单时间 - 最早下单时间）
+     * 
+     * @param clientId 客户ID
+     * @return 服务时间（以天为单位），如果无法计算则返回null
+     */
+    public Double calculateServiceTimeForClient(String clientId) {
+        try {
+            logger.info("开始计算客户的服务时间，客户ID: {}", clientId);
+            
+            // 获取客户的最早和最晚下单时间
+            LocalDateTime earliestTime = orderMapper.getEarliestOrderTimeByClientId(clientId);
+            LocalDateTime latestTime = orderMapper.getLatestOrderTimeByClientId(clientId);
+            
+            // 检查时间是否有效
+            if (earliestTime == null || latestTime == null) {
+                logger.warn("无法获取客户的时间数据，客户ID: {}", clientId);
+                return null;
+            }
+            
+            // 计算服务时间（以天为单位）
+            Duration duration = Duration.between(earliestTime, latestTime);
+            double serviceTimeInDays = duration.toHours() / 24.0;
+            
+            logger.info("客户服务时间计算完成: 客户ID={}, 最早时间={}, 最晚时间={}, 服务时间={}天", 
+                    clientId, earliestTime, latestTime, serviceTimeInDays);
+            
+            return serviceTimeInDays;
+            
+        } catch (Exception e) {
+            logger.error("计算客户服务时间失败，客户ID: {}", clientId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 计算所有客户的平均服务时间
+     * 先计算每个用户的服务时间，之后对所有用户服务时间取平均值
+     * 
+     * @return 平均服务时间（以天为单位）
+     */
+    public Double calculateAverageServiceTime() {
+        try {
+            logger.info("开始计算所有客户的平均服务时间");
+            
+            // 获取所有唯一的客户ID
+            List<String> clientIds = orderMapper.getAllUniqueClientIds();
+            
+            if (clientIds == null || clientIds.isEmpty()) {
+                logger.warn("没有找到任何客户ID");
+                return null;
+            }
+            
+            logger.info("找到 {} 个唯一客户ID", clientIds.size());
+            
+            // 计算每个客户的服务时间并累加
+            double totalServiceTime = 0.0;
+            int validClientCount = 0;
+            
+            for (String clientId : clientIds) {
+                Double serviceTime = calculateServiceTimeForClient(clientId);
+                if (serviceTime != null) {
+                    totalServiceTime += serviceTime;
+                    validClientCount++;
+                }
+            }
+            
+            // 检查是否有有效的客户数据
+            if (validClientCount == 0) {
+                logger.warn("没有有效的客户服务时间数据");
+                return null;
+            }
+            
+            // 计算平均服务时间
+            double averageServiceTime = totalServiceTime / validClientCount;
+            
+            logger.info("所有客户平均服务时间计算完成: 客户总数={}, 有效客户数={}, 总服务时间={}天, 平均服务时间={}天", 
+                    clientIds.size(), validClientCount, totalServiceTime, averageServiceTime);
+            
+            return averageServiceTime;
+            
+        } catch (Exception e) {
+            logger.error("计算所有客户的平均服务时间失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 获取指定日期之后首次下单的客户ID列表
+     * 
+     * @param date 指定日期
+     * @return 在指定日期之后首次下单的客户ID列表
+     */
+    public List<String> getNewClientsAfterDate(LocalDateTime date) {
+        try {
+            logger.info("开始查询指定日期之后首次下单的客户，日期: {}", date);
+            
+            List<String> newClientIds = orderMapper.getNewClientIdsAfterDate(date);
+            
+            logger.info("查询完成，找到 {} 个在指定日期之后首次下单的客户", 
+                    newClientIds != null ? newClientIds.size() : 0);
+            
+            return newClientIds;
+            
+        } catch (Exception e) {
+            logger.error("查询指定日期之后首次下单的客户失败，日期: {}", date, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 计算指定日期之后用户的十日成交转换率
+     * 十日成交转换率 = 服务时间在2天到10天之间的用户数 / 指定日期之后用户数
+     * 
+     * @param date 指定日期
+     * @return 十日成交转换率
+     */
+    public Double calculateTenDayConversionRate(LocalDateTime date) {
+        try {
+            logger.info("开始计算指定日期之后用户的十日成交转换率，日期: {}", date);
+            
+            // 获取指定日期之后首次下单的客户ID列表
+            List<String> newClientIds = getNewClientsAfterDate(date);
+            
+            // 检查是否有客户数据
+            if (newClientIds == null || newClientIds.isEmpty()) {
+                logger.warn("指定日期之后没有新客户");
+                return 0.0;
+            }
+            
+            int totalNewClients = newClientIds.size();
+            int clientsWithValidServiceTime = 0; // 服务时间在2天到10天之间的客户数
+            
+            // 遍历每个客户，计算服务时间在2天到10天之间的客户数
+            for (String clientId : newClientIds) {
+                Double serviceTime = calculateServiceTimeForClient(clientId);
+                // 服务时间大于等于2天且小于10天的客户才被认为是成交用户
+                if (serviceTime != null && serviceTime >= 2.0 && serviceTime < 10.0) {
+                    clientsWithValidServiceTime++;
+                }
+            }
+            
+            // 计算十日成交转换率
+            double conversionRate = (double) clientsWithValidServiceTime / totalNewClients;
+            
+            logger.info("十日成交转换率计算完成: 指定日期之后用户数={}, 服务时间在2天到10天之间的用户数={}, 转换率={}", 
+                    totalNewClients, clientsWithValidServiceTime, conversionRate);
+            
+            return conversionRate;
+            
+        } catch (Exception e) {
+            logger.error("计算十日成交转换率失败，日期: {}", date, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 计算指定日期之后用户的十五日成交转换率
+     * 十五日成交转换率 = 服务时间在2天到15天之间的用户数 / 指定日期之后用户数
+     * 
+     * @param date 指定日期
+     * @return 十五日成交转换率
+     */
+    public Double calculateFifteenDayConversionRate(LocalDateTime date) {
+        try {
+            logger.info("开始计算指定日期之后用户的十五日成交转换率，日期: {}", date);
+            
+            // 获取指定日期之后首次下单的客户ID列表
+            List<String> newClientIds = getNewClientsAfterDate(date);
+            
+            // 检查是否有客户数据
+            if (newClientIds == null || newClientIds.isEmpty()) {
+                logger.warn("指定日期之后没有新客户");
+                return 0.0;
+            }
+            
+            int totalNewClients = newClientIds.size();
+            int clientsWithValidServiceTime = 0; // 服务时间在2天到15天之间的客户数
+            
+            // 遍历每个客户，计算服务时间在2天到15天之间的客户数
+            for (String clientId : newClientIds) {
+                Double serviceTime = calculateServiceTimeForClient(clientId);
+                // 服务时间大于等于2天且小于15天的客户才被认为是成交用户
+                if (serviceTime != null && serviceTime >= 2.0 && serviceTime < 15.0) {
+                    clientsWithValidServiceTime++;
+                }
+            }
+            
+            // 计算十五日成交转换率
+            double conversionRate = (double) clientsWithValidServiceTime / totalNewClients;
+            
+            logger.info("十五日成交转换率计算完成: 指定日期之后用户数={}, 服务时间在2天到15天之间的用户数={}, 转换率={}", 
+                    totalNewClients, clientsWithValidServiceTime, conversionRate);
+            
+            return conversionRate;
+            
+        } catch (Exception e) {
+            logger.error("计算十五日成交转换率失败，日期: {}", date, e);
+            return null;
+        }
     }
 }

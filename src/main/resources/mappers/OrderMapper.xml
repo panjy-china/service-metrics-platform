@@ -91,5 +91,50 @@
         AND colOdrTim &lt;= #{endTime}
         AND colTotal &gt; 0
     </select>
+    
+    <!-- Get earliest order time for specified client -->
+    <select id="getEarliestOrderTimeByClientId" resultType="java.time.LocalDateTime">
+        SELECT MIN(colOdrTim) as earliestTime
+        FROM aikang.tbl_Order
+        WHERE colCltID = #{clientId}
+    </select>
+    
+    <!-- Get latest order time for specified client -->
+    <select id="getLatestOrderTimeByClientId" resultType="java.time.LocalDateTime">
+        SELECT MAX(colOdrTim) as latestTime
+        FROM aikang.tbl_Order
+        WHERE colCltID = #{clientId}
+    </select>
+    
+    <!-- Get earliest order time for all clients -->
+    <select id="getEarliestOrderTimeForAll" resultType="java.time.LocalDateTime">
+        SELECT MIN(colOdrTim) as earliestTime
+        FROM aikang.tbl_Order
+    </select>
+    
+    <!-- Get latest order time for all clients -->
+    <select id="getLatestOrderTimeForAll" resultType="java.time.LocalDateTime">
+        SELECT MAX(colOdrTim) as latestTime
+        FROM aikang.tbl_Order
+    </select>
+    
+    <!-- Get all unique client IDs -->
+    <select id="getAllUniqueClientIds" resultType="java.lang.String">
+        SELECT DISTINCT colCltID
+        FROM aikang.tbl_Order
+        WHERE colCltID IS NOT NULL AND colCltID != ''
+    </select>
+    
+    <!-- Get new client IDs after specified date -->
+    <select id="getNewClientIdsAfterDate" resultType="java.lang.String">
+        SELECT colCltID
+        FROM (
+            SELECT colCltID, MIN(colOdrTim) as firstOrderTime
+            FROM aikang.tbl_Order
+            WHERE colCltID IS NOT NULL AND colCltID != ''
+            GROUP BY colCltID
+        ) t
+        WHERE firstOrderTime &gt;= #{date}
+    </select>
 
 </mapper>
