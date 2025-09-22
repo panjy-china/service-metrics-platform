@@ -35,11 +35,12 @@ public class ClickHouseDataSourceConfig {
         // 设置MyBatis配置文件位置
         bean.setConfigLocation(new PathMatchingResourcePatternResolver().getResource("classpath:mybatis-config.xml"));
         
-        // ClickHouse加载OrderMapper.xml和ClientMapper.xml - 分别获取资源并合并
+        // ClickHouse加载OrderMapper.xml、ClientMapper.xml和ServerTimeMapper.xml - 分别获取资源并合并
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         List<Resource> mapperResources = new ArrayList<>();
         mapperResources.addAll(Arrays.asList(resolver.getResources("classpath:mappers/OrderMapper.xml")));
         mapperResources.addAll(Arrays.asList(resolver.getResources("classpath:mappers/ClientMapper.xml")));
+        mapperResources.addAll(Arrays.asList(resolver.getResources("classpath:mappers/ServerTimeMapper.xml")));
         bean.setMapperLocations(mapperResources.toArray(new Resource[0]));
         // 设置类型别名包
         bean.setTypeAliasesPackage("org.panjy.servicemetricsplatform.entity");

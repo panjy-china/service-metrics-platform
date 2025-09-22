@@ -653,6 +653,4 @@ public class OrderMetricsController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
         }
     }
-
-
 }

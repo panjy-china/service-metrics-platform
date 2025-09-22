@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.ServerTimeMapper">
+
+    <!-- ServerTime Result Map -->
+    <resultMap id="ServerTimeResultMap" type="org.panjy.servicemetricsplatform.entity.ServerTime">
+        <result column="colCltID" property="colCltID"/>
+        <result column="colSerTi" property="colSerTi"/>
+        <result column="createTime" property="createTime"/>
+        <result column="updateTime" property="updateTime"/>
+    </resultMap>
+
+    <!-- 插入或更新服务时间记录 -->
+    <insert id="insertOrUpdate" parameterType="org.panjy.servicemetricsplatform.entity.ServerTime">
+        INSERT INTO aikang.tbl_ServerTime (colCltID, colSerTi, createTime, updateTime)
+        VALUES (#{colCltID}, #{colSerTi}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <!-- 批量插入或更新服务时间记录 -->
+    <insert id="batchInsertOrUpdate" parameterType="java.util.List">
+        INSERT INTO aikang.tbl_ServerTime (colCltID, colSerTi, createTime, updateTime)
+        VALUES
+        <foreach collection="serverTimes" item="item" separator=",">
+            (#{item.colCltID}, #{item.colSerTi}, #{item.createTime}, #{item.updateTime})
+        </foreach>
+    </insert>
+    
+    <!-- 查询指定日期之后的所有记录 -->
+    <select id="getServerTimesAfterDate" resultMap="ServerTimeResultMap">
+        SELECT colCltID, colSerTi, createTime, updateTime
+        FROM aikang.tbl_ServerTime
+        WHERE colSerTi >= #{date}
+        ORDER BY colCltID, colSerTi
+    </select>
+    
+    <!-- 查询所有客户的服务时间记录 -->
+    <select id="getAllServerTimes" resultMap="ServerTimeResultMap">
+        SELECT colCltID, colSerTi, createTime, updateTime
+        FROM aikang.tbl_ServerTime
+        ORDER BY colCltID
+    </select>
+    
+    <!-- 根据客户ID查询记录 -->
+    <select id="getByClientId" resultMap="ServerTimeResultMap">
+        SELECT colCltID, colSerTi, createTime, updateTime
+        FROM aikang.tbl_ServerTime
+        WHERE colCltID = #{clientId}
+    </select>
+
+</mapper>

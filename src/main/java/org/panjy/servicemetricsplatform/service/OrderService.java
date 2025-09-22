@@ -1,26 +1,30 @@
 package org.panjy.servicemetricsplatform.service;
 
+import org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper;
+import org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageMapper;
+import org.panjy.servicemetricsplatform.entity.Order;
+import org.panjy.servicemetricsplatform.model.MetricResult;
+import org.panjy.servicemetricsplatform.constant.Constants;
+import org.panjy.servicemetricsplatform.mapper.clickhouse.ServerTimeMapper;
+import org.panjy.servicemetricsplatform.service.ServerTimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper;
-import org.panjy.servicemetricsplatform.constant.Constants;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.YearMonth;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * 订单服务类
- * 提供订单相关的业务逻辑
+ * 提供订单统计分析相关的业务逻辑实现
  */
 @Service
 public class OrderService {
@@ -29,6 +33,15 @@ public class OrderService {
     
     @Autowired
     private OrderMapper orderMapper;
+    
+    @Autowired
+    private WechatMessageMapper wechatMessageMapper;
+    
+    @Autowired
+    private ServerTimeService serverTimeService;
+    
+    @Autowired
+    private ServerTimeMapper serverTimeMapper;
     
     /**
      * 计算指定月份人均成交订单数
@@ -235,7 +248,7 @@ public class OrderService {
                 logger.debug("当前值和上期值都为0，增长率设为0");
                 return BigDecimal.ZERO;
             } else {
-                logger.warn("上期值为0，无法计算增长率，返回100%表示全新增长");
+                logger.warn("上期値为0，无法计算增长率，返回100%表示全新增长");
                 return new BigDecimal("100.00");
             }
         }
@@ -251,11 +264,11 @@ public class OrderService {
                     .multiply(new BigDecimal("100"))
                     .setScale(2, RoundingMode.HALF_UP);
             
-            logger.debug("增长率计算: 当前值={}, 上期倽={}, 增长率={}%", currentValue, previousValue, growthRate);
+            logger.debug("增长率计算: 当前値={}, 上期値={}, 增长率={}%", currentValue, previousValue, growthRate);
             return growthRate;
             
         } catch (Exception e) {
-            logger.error("计算增长率失败: 当前值={}, 上期倽={}", currentValue, previousValue, e);
+            logger.error("计算增长率失败: 当前値={}, 上期値={}", currentValue, previousValue, e);
             return BigDecimal.ZERO;
         }
     }
@@ -364,36 +377,35 @@ public class OrderService {
     }
     
     /**
-     * 计算指定客户的使用服务时间（最晚下单时间 - 最早下单时间）
+     * 计算指定客户的使用服务时间（直接查询ServerTime表）
      * 
      * @param clientId 客户ID
      * @return 服务时间（以天为单位），如果无法计算则返回null
      */
     public Double calculateServiceTimeForClient(String clientId) {
         try {
-            logger.info("开始计算客户的服务时间，客户ID: {}", clientId);
+            logger.info("开始查询客户的服务时间，客户ID: {}", clientId);
             
-            // 获取客户的最早和最晚下单时间
-            LocalDateTime earliestTime = orderMapper.getEarliestOrderTimeByClientId(clientId);
-            LocalDateTime latestTime = orderMapper.getLatestOrderTimeByClientId(clientId);
+            // 直接查询ServerTime表获取服务时间
+            org.panjy.servicemetricsplatform.entity.ServerTime serverTime = serverTimeMapper.getByClientId(clientId);
             
-            // 检查时间是否有效
-            if (earliestTime == null || latestTime == null) {
-                logger.warn("无法获取客户的时间数据，客户ID: {}", clientId);
+            // 检查是否获取到服务时间记录
+            if (serverTime == null || serverTime.getColSerTi() == null) {
+                logger.warn("无法获取客户的服务时间数据，客户ID: {}", clientId);
                 return null;
             }
             
-            // 计算服务时间（以天为单位）
-            Duration duration = Duration.between(earliestTime, latestTime);
-            double serviceTimeInDays = duration.toHours() / 24.0;
+            // 从ServerTime表中获取的服务时间是秒数，需要转换为天数
+            // colSerTi字段存储的是服务时长（秒）
+            long serviceTimeInSeconds = serverTime.getColSerTi();
+            double serviceTimeInDays = serviceTimeInSeconds / (24.0 * 60 * 60);
             
-            logger.info("客户服务时间计算完成: 客户ID={}, 最早时间={}, 最晚时间={}, 服务时间={}天", 
-                    clientId, earliestTime, latestTime, serviceTimeInDays);
+            logger.info("客户服务时间查询完成: 客户ID={}, 服务时间={}秒 ({}天)", clientId, serviceTimeInSeconds, serviceTimeInDays);
             
             return serviceTimeInDays;
             
         } catch (Exception e) {
-            logger.error("计算客户服务时间失败，客户ID: {}", clientId, e);
+            logger.error("查询客户服务时间失败，客户ID: {}", clientId, e);
             return null;
         }
     }
@@ -408,39 +420,40 @@ public class OrderService {
         try {
             logger.info("开始计算所有客户的平均服务时间");
             
-            // 获取所有唯一的客户ID
-            List<String> clientIds = orderMapper.getAllUniqueClientIds();
+            // 直接从ServerTime表中获取所有客户的服务时间
+            List<org.panjy.servicemetricsplatform.entity.ServerTime> serverTimes = serverTimeService.getAllServerTimes();
             
-            if (clientIds == null || clientIds.isEmpty()) {
-                logger.warn("没有找到任何客户ID");
+            if (serverTimes == null || serverTimes.isEmpty()) {
+                logger.warn("没有找到任何客户的服务时间记录");
                 return null;
             }
             
-            logger.info("找到 {} 个唯一客户ID", clientIds.size());
+            logger.info("找到 {} 条客户的服务时间记录", serverTimes.size());
             
-            // 计算每个客户的服务时间并累加
+            // 计算总服务时间
             double totalServiceTime = 0.0;
-            int validClientCount = 0;
+            int validRecordCount = 0;
             
-            for (String clientId : clientIds) {
-                Double serviceTime = calculateServiceTimeForClient(clientId);
-                if (serviceTime != null) {
-                    totalServiceTime += serviceTime;
-                    validClientCount++;
+            for (org.panjy.servicemetricsplatform.entity.ServerTime serverTime : serverTimes) {
+                if (serverTime.getColSerTi() != null) {
+                    // 将服务时间（秒数）转换为天数并累加
+                    double serviceTimeInDays = serverTime.getColSerTi() / (24.0 * 60 * 60);
+                    totalServiceTime += serviceTimeInDays;
+                    validRecordCount++;
                 }
             }
             
-            // 检查是否有有效的客户数据
-            if (validClientCount == 0) {
+            // 检查是否有有效的记录
+            if (validRecordCount == 0) {
                 logger.warn("没有有效的客户服务时间数据");
                 return null;
             }
             
             // 计算平均服务时间
-            double averageServiceTime = totalServiceTime / validClientCount;
+            double averageServiceTime = totalServiceTime / validRecordCount;
             
-            logger.info("所有客户平均服务时间计算完成: 客户总数={}, 有效客户数={}, 总服务时间={}天, 平均服务时间={}天", 
-                    clientIds.size(), validClientCount, totalServiceTime, averageServiceTime);
+            logger.info("所有客户平均服务时间计算完成: 记录总数={}, 有效记录数={}, 总服务时间={}天, 平均服务时间={}天", 
+                    serverTimes.size(), validRecordCount, totalServiceTime, averageServiceTime);
             
             return averageServiceTime;
             
@@ -493,12 +506,13 @@ public class OrderService {
                 return 0.0;
             }
             
-            int totalNewClients = newClientIds.size();
-            int clientsWithValidServiceTime = 0; // 服务时间在2天到10天之间的客户数
+            // 直接从ServerTime表中获取指定日期之后所有客户的服务时间
+            Map<String, Double> serviceTimeMap = getServiceTimeForClientsAfterDate(date);
             
-            // 遍历每个客户，计算服务时间在2天到10天之间的客户数
-            for (String clientId : newClientIds) {
-                Double serviceTime = calculateServiceTimeForClient(clientId);
+            // 计算服务时间在2天到10天之间的客户数
+            int clientsWithValidServiceTime = 0;
+            for (Map.Entry<String, Double> entry : serviceTimeMap.entrySet()) {
+                Double serviceTime = entry.getValue();
                 // 服务时间大于等于2天且小于10天的客户才被认为是成交用户
                 if (serviceTime != null && serviceTime >= 2.0 && serviceTime < 10.0) {
                     clientsWithValidServiceTime++;
@@ -506,6 +520,7 @@ public class OrderService {
             }
             
             // 计算十日成交转换率
+            int totalNewClients = newClientIds.size();
             double conversionRate = (double) clientsWithValidServiceTime / totalNewClients;
             
             logger.info("十日成交转换率计算完成: 指定日期之后用户数={}, 服务时间在2天到10天之间的用户数={}, 转换率={}", 
@@ -516,6 +531,46 @@ public class OrderService {
         } catch (Exception e) {
             logger.error("计算十日成交转换率失败，日期: {}", date, e);
             return null;
+        }
+    }
+    
+    /**
+     * 获取指定日期之后所有客户的服务时间
+     * 
+     * @param date 指定日期
+     * @return 客户ID和服务时间的映射
+     */
+    public Map<String, Double> getServiceTimeForClientsAfterDate(LocalDateTime date) {
+        try {
+            logger.info("开始获取指定日期之后所有客户的服务时间，日期: {}", date);
+            
+            // 直接从ServerTime表中获取所有客户的服务时间
+            List<org.panjy.servicemetricsplatform.entity.ServerTime> serverTimes = serverTimeService.getServerTimesAfterDate(date.toLocalDate());
+            
+            // 检查是否有服务时间数据
+            if (serverTimes == null || serverTimes.isEmpty()) {
+                logger.warn("指定日期之后没有客户的服务时间记录");
+                return new HashMap<>();
+            }
+            
+            logger.info("找到 {} 条客户的服务时间记录", serverTimes.size());
+            
+            // 转换服务时间为天数并构建映射
+            Map<String, Double> serviceTimeMap = new HashMap<>();
+            
+            for (org.panjy.servicemetricsplatform.entity.ServerTime serverTime : serverTimes) {
+                // 将服务时间（秒数）转换为天数
+                double serviceTimeInDays = serverTime.getColSerTi() / (24.0 * 60 * 60);
+                serviceTimeMap.put(serverTime.getColCltID(), serviceTimeInDays);
+            }
+            
+            logger.info("获取指定日期之后所有客户的服务时间完成，有效客户数: {}", serviceTimeMap.size());
+            
+            return serviceTimeMap;
+            
+        } catch (Exception e) {
+            logger.error("获取指定日期之后所有客户的服务时间失败，日期: {}", date, e);
+            return new HashMap<>();
         }
     }
     
@@ -539,12 +594,13 @@ public class OrderService {
                 return 0.0;
             }
             
-            int totalNewClients = newClientIds.size();
-            int clientsWithValidServiceTime = 0; // 服务时间在2天到15天之间的客户数
+            // 直接从ServerTime表中获取指定日期之后所有客户的服务时间
+            Map<String, Double> serviceTimeMap = getServiceTimeForClientsAfterDate(date);
             
-            // 遍历每个客户，计算服务时间在2天到15天之间的客户数
-            for (String clientId : newClientIds) {
-                Double serviceTime = calculateServiceTimeForClient(clientId);
+            // 计算服务时间在2天到15天之间的客户数
+            int clientsWithValidServiceTime = 0;
+            for (Map.Entry<String, Double> entry : serviceTimeMap.entrySet()) {
+                Double serviceTime = entry.getValue();
                 // 服务时间大于等于2天且小于15天的客户才被认为是成交用户
                 if (serviceTime != null && serviceTime >= 2.0 && serviceTime < 15.0) {
                     clientsWithValidServiceTime++;
@@ -552,6 +608,7 @@ public class OrderService {
             }
             
             // 计算十五日成交转换率
+            int totalNewClients = newClientIds.size();
             double conversionRate = (double) clientsWithValidServiceTime / totalNewClients;
             
             logger.info("十五日成交转换率计算完成: 指定日期之后用户数={}, 服务时间在2天到15天之间的用户数={}, 转换率={}", 
