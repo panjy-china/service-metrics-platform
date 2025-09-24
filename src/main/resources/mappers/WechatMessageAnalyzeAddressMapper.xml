@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageAnalyzeAddressMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper">
     
     <!-- 结果映射 -->
     <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
@@ -131,14 +131,14 @@
     <!-- 查询每个用户的最新地址（排除北京大兴） -->
     <select id="getUserLatestAddresses" resultType="java.lang.String">
         <![CDATA[
-        SELECT MAX(address) AS address
-        FROM wechat_message_a_analyze_address
-        WHERE address NOT LIKE '%北京%大兴%'
-          AND address IS NOT NULL
-          AND address != ''
-          AND address != '未识别'
-          AND address != '提取失败'
-        GROUP BY wechat_id
+            SELECT *
+            FROM (
+                     SELECT
+                         max(address) AS max_address
+                     FROM aikang.wechat_message_a_analyze_address
+                     GROUP BY wechat_id
+                 ) t
+            WHERE t.max_address NOT LIKE '%北京%大兴%';
         ]]>
     </select>
     

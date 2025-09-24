@@ -1,7 +1,7 @@
 package org.panjy.servicemetricsplatform.service;
 
 import org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageAnalyzeAddressMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

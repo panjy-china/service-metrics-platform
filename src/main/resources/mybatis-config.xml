@@ -13,4 +13,9 @@
         <setting name="logImpl" value="STDOUT_LOGGING"/>
     </settings>
 
+    <!-- 类型处理器 -->
+    <typeHandlers>
+        <typeHandler handler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
+    </typeHandlers>
+
 </configuration>

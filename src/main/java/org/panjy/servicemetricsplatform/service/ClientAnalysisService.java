@@ -1,6 +1,6 @@
 package org.panjy.servicemetricsplatform.service;
 
-import org.panjy.servicemetricsplatform.mapper.clickhouse.ClientMapper;
+import org.panjy.servicemetricsplatform.mapper.ClientMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

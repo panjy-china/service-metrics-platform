@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageMapper">
     <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
         <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
         <id property="wechatId" column="wechatId"/>
@@ -24,52 +24,52 @@
     <select id="findMessageByContent"
             resultType="java.lang.String">
         SELECT DISTINCT friend_wechat_id
-        FROM wechat_message w
+        FROM wechat_message
         WHERE 1 = 1
         <if test="content != null and content != ''">
-            AND w.content LIKE CONCAT('%', #{content}, '%')
+            AND content LIKE CONCAT('%', #{content}, '%')
         </if>
         <if test="begin != null">
-            AND w.chat_time &gt;= #{begin}
+            AND chat_time &gt;= #{begin}
         </if>
         <if test="end != null">
-            AND w.chat_time &lt;= #{end}
+            AND chat_time &lt;= #{end}
         </if>
     </select>
 <!-- 查询某天的活跃用户个数 -->
     <select id="findActiveUsers" resultType="java.lang.String">
         SELECT DISTINCT friend_wechat_id
-        FROM wechat_message
+        FROM aikang.wechat_message
         WHERE friend_nickname = sender
-        AND chat_time &gt;= DATE_SUB(#{checkTime}, INTERVAL 3 DAY)
-        AND chat_time &lt;= #{checkTime};
+        AND chat_time &gt;= subtractDays(toDateTime(#{checkTime}), 3)
+        AND chat_time &lt;= toDateTime(#{checkTime});
     </select>
 <!-- 查询留存率 -->
     <select id="findUserServived" resultType="java.lang.String">
         SELECT w.friend_wechat_id AS wechat_id
         FROM wechat_message w
-        WHERE DATE(w.chat_time) BETWEEN DATE(#{checkTime}) AND DATE_ADD(DATE(#{checkTime}), INTERVAL #{days} DAY)
+        WHERE toDate(w.chat_time) BETWEEN toDate(#{checkTime}) AND addDays(toDate(#{checkTime}), #{days})
           AND w.friend_nickname = w.sender
         GROUP BY w.friend_wechat_id
-        HAVING COUNT(DISTINCT DATE(w.chat_time)) = #{days};
+        HAVING COUNT(DISTINCT toDate(w.chat_time)) = #{days};
     </select>
     <select id="findInactiveUsers" resultType="java.lang.String">
         SELECT t.wechat_id
         FROM (
-            SELECT w1.friend_wechat_id AS wechat_id
-            FROM wechat_message w1
-            WHERE w1.sender = w1.friend_nickname
-            GROUP BY w1.friend_wechat_id
-            HAVING MIN(w1.chat_time) BETWEEN #{startTime}
-                AND DATE_ADD(#{startTime}, INTERVAL 1 DAY)
-        ) t
+                 SELECT w1.friend_wechat_id AS wechat_id
+                 FROM aikang.wechat_message w1
+                 WHERE w1.sender = w1.friend_nickname
+                 GROUP BY w1.friend_wechat_id
+                 HAVING MIN(w1.chat_time) BETWEEN toDateTime(#{startTime})
+                            AND addDays(toDateTime(#{startTime}), 1)
+             ) t
         WHERE t.wechat_id NOT IN (
             SELECT u1.friend_wechat_id AS wechat_id
-            FROM wechat_message u1
+            FROM aikang.wechat_message u1
             WHERE u1.sender = u1.friend_nickname
-                AND u1.chat_time &lt;= DATE_ADD(#{startTime}, INTERVAL 7 DAY)
+              AND u1.chat_time &lt;= addDays(toDateTime(#{startTime}), 7)
             GROUP BY u1.friend_wechat_id
-            HAVING MAX(u1.chat_time) >= DATE_ADD(#{startTime}, INTERVAL 5 DAY)
+            HAVING MAX(u1.chat_time) &gt;= addDays(toDateTime(#{startTime}), 5)
         )
     </select>
     <select id="findConversationsByDate" resultMap="ConversationResultMap">
@@ -109,11 +109,7 @@
                      wm.chat_time,
                      wm.wechat_nickname,
                      wm.wechat_id,
-                     TIMESTAMPDIFF(
-                             SECOND,
-                             fmt.first_chat_time,
-                             wm.chat_time
-                     ) AS seconds_after_first_msg
+                     dateDiff('second', fmt.first_chat_time, wm.chat_time) AS seconds_after_first_msg
                  FROM wechat_message wm
                           JOIN FirstMsgTime fmt
                                ON wm.friend_wechat_id = fmt.friend_wechat_id

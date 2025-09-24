@@ -1,36 +1,23 @@
+server:
+  port: 8081
+
 spring:
   profiles:
     active: dev
-    
+
   datasource:
-    mysql:
-      jdbc-url: jdbc:mysql://rm-uf6itdd69r9j2b45ato.mysql.rds.aliyuncs.com:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&connectionTimeZone=LOCAL
-      username: jcs
-      password: Jueceshu2021
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      hikari:
-        maximum-pool-size: 20
-        minimum-idle: 5
-        connection-timeout: 20000
-    clickhouse:
-      jdbc-url: jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION
-      username: default
-      password: 123456
-      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
-      hikari:
-        maximum-pool-size: 10
-        minimum-idle: 2
-        connection-timeout: 20000
-      
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        jdbc:
-          time_zone: Asia/Shanghai
-        show_sql: false
-    database-platform: org.hibernate.dialect.MySQLDialect
+    url: jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION
+    username: default
+    password: 123456
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+    type: com.zaxxer.hikari.HikariDataSource
+
+  # 彻底禁用 JPA/Hibernate，不要让 Spring Boot 自动加载
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
 mybatis:
   mapper-locations: classpath:mappers/*.xml

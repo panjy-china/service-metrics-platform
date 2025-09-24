@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.clickhouse.ClientMapper">
-    
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.ClientMapper">
+
     <!-- 结果映射 -->
     <resultMap id="ClientResultMap" type="org.panjy.servicemetricsplatform.entity.Client">
         <result column="colCltID" property="colCltID"/>
@@ -40,21 +40,21 @@
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
-        colCltID, colEmpID, colDptID, colPhs, colName, colGender, colAddress, 
-        colProvince, colCity, colAge, colZip, colQQ, colMSN, colDemo, colCrtTim, 
-        colEnable, colLevel, colMediaID, collastlogintime, colProfession, colActivity, 
-        colRecommend, colHeight, colWeight, colWaist, colBust, colCataLog, colArea, 
+        colCltID, colEmpID, colDptID, colPhs, colName, colGender, colAddress,
+        colProvince, colCity, colAge, colZip, colQQ, colMSN, colDemo, colCrtTim,
+        colEnable, colLevel, colMediaID, collastlogintime, colProfession, colActivity,
+        colRecommend, colHeight, colWeight, colWaist, colBust, colCataLog, colArea,
         colBloodType, colHealth, colIncome, colAttrClass
     </sql>
 
     <!-- 查询备注信息有效的客户列表 -->
     <select id="selectClientsWithValidDemo" resultMap="ClientResultMap">
-        SELECT 
+        SELECT
             <include refid="Base_Column_List"/>
         FROM aikang.tbl_Client
-        WHERE <![CDATA[ colDemo IS NOT NULL 
-            AND length(colDemo) >= 20 
-            AND colDemo NOT LIKE '%成单%' 
+        WHERE <![CDATA[ colDemo IS NOT NULL
+            AND length(colDemo) >= 20
+            AND colDemo NOT LIKE '%成单%'
             AND colDemo NOT LIKE '%下单%' ]]>
         ORDER BY colCrtTim DESC
     </select>
@@ -62,7 +62,7 @@
     <!-- 批量更新客户分析结果 -->
     <update id="batchUpdateClientAnalysisResult">
         <foreach collection="clients" item="client" separator=";">
-            ALTER TABLE aikang.tbl_Client UPDATE 
+            ALTER TABLE aikang.tbl_Client UPDATE
                 colGender = #{client.colGender},
                 colAge = #{client.colAge},
                 colHeight = #{client.colHeight},
@@ -73,17 +73,17 @@
 
     <!-- 更新单个客户的分析结果 -->
     <update id="updateClientAnalysisResult">
-        ALTER TABLE aikang.tbl_Client UPDATE 
+        ALTER TABLE aikang.tbl_Client UPDATE
             colGender = #{client.colGender},
             colAge = #{client.colAge},
             colHeight = #{client.colHeight},
             colWeight = #{client.colWeight}
         WHERE colCltID LIKE #{client.colCltID} || '%'
     </update>
-    
+
     <!-- 查询性别分布 （男、女） -->
     <select id="selectGenderDistribution" resultType="java.util.Map">
-        SELECT 
+        SELECT
             colGender as gender,
             COUNT(*) as count
         FROM aikang.tbl_Client
@@ -95,7 +95,7 @@
 
     <!-- 查询年龄分布 -->
     <select id="selectAgeDistribution" resultType="java.util.Map">
-        SELECT 
+        SELECT
             CASE
                 WHEN colAge &lt; 18 THEN '未成年'
                 WHEN colAge &lt; 25 THEN '18-24岁'
@@ -108,7 +108,7 @@
         FROM aikang.tbl_Client
         WHERE colAge IS NOT NULL
         GROUP BY ageGroup
-        ORDER BY 
+        ORDER BY
             CASE ageGroup
                 WHEN '未成年' THEN 1
                 WHEN '18-24岁' THEN 2
@@ -121,7 +121,7 @@
 
     <!-- 查询体重分布 -->
     <select id="selectWeightDistribution" resultType="java.util.Map">
-        SELECT 
+        SELECT
             CASE
                 WHEN colWeight &lt; 40 THEN '40kg以下'
                 WHEN colWeight &lt; 50 THEN '40-50kg'
@@ -134,7 +134,7 @@
         FROM aikang.tbl_Client
         WHERE colWeight IS NOT NULL
         GROUP BY weightGroup
-        ORDER BY 
+        ORDER BY
             CASE weightGroup
                 WHEN '40kg以下' THEN 1
                 WHEN '40-50kg' THEN 2
@@ -147,7 +147,7 @@
 
     <!-- 获取身高分布 -->
     <select id="selectHeightDistribution" resultType="java.util.Map">
-        SELECT 
+        SELECT
             CASE
                 WHEN colHeight &lt; 150 THEN '150cm以下'
                 WHEN colHeight &lt; 160 THEN '150-159cm'
@@ -160,7 +160,7 @@
         FROM aikang.tbl_Client
         WHERE colHeight IS NOT NULL
         GROUP BY heightGroup
-        ORDER BY 
+        ORDER BY
             CASE heightGroup
                 WHEN '150cm以下' THEN 1
                 WHEN '150-159cm' THEN 2

@@ -2,7 +2,7 @@
 
 ## 功能概述
 
-本功能实现了查询7.28后的微信消息数据，使用LLM分析其中的地址信息，并将分析结果存储到MySQL数据库中。
+本功能实现了查询7.28后的微信消息数据，使用LLM分析其中的地址信息，并将分析结果存储到ClickHouse数据库中。
 
 ## 功能特性
 
@@ -22,7 +22,7 @@ CREATE TABLE `wechat_message_a_analyze_address` (
   `wechat_time` bigint DEFAULT NULL COMMENT '微信服务器时间戳（毫秒）',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '聊天消息的内容',
   `address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'AI分析后的地址'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=ClickHouse DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 ```
 
 ## 使用方法
@@ -70,8 +70,8 @@ String result = llmAnalysisService.analyzeAndStoreAddressesAfterDate728();
 - [`WechatMessageAnalyzeAddress`](src/main/java/org/panjy/servicemetricsplatform/entity/WechatMessageAnalyzeAddress.java): 地址分析结果实体类
 
 ### 2. Mapper接口
-- [`MessageMapper`](src/main/java/org/panjy/servicemetricsplatform/mapper/mysql/MessageMapper.java): 查询原始消息数据
-- [`WechatMessageAnalyzeAddressMapper`](src/main/java/org/panjy/servicemetricsplatform/mapper/mysql/WechatMessageAnalyzeAddressMapper.java): 操作分析结果数据
+- [`MessageMapper`](src/main/java/org/panjy/servicemetricsplatform/mapper/MessageMapper.java): 查询原始消息数据
+- [`WechatMessageAnalyzeAddressMapper`](src/main/java/org/panjy/servicemetricsplatform/mapper/WechatMessageAnalyzeAddressMapper.java): 操作分析结果数据
 
 ### 3. 业务逻辑
 - [`LLMAnalysisService`](src/main/java/org/panjy/servicemetricsplatform/service/LLMAnalysisService.java): 核心分析服务
@@ -94,7 +94,7 @@ dashscope:
 ```
 
 ### 2. 数据库配置
-确保MySQL数据库连接正常，且已创建目标表。
+确保ClickHouse数据库连接正常，且已创建目标表。
 
 ## 处理流程
 

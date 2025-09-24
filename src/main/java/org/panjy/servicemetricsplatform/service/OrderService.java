@@ -1,11 +1,11 @@
 package org.panjy.servicemetricsplatform.service;
 
-import org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageMapper;
+import org.panjy.servicemetricsplatform.mapper.OrderMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatMessageMapper;
 import org.panjy.servicemetricsplatform.entity.Order;
 import org.panjy.servicemetricsplatform.model.MetricResult;
 import org.panjy.servicemetricsplatform.constant.Constants;
-import org.panjy.servicemetricsplatform.mapper.clickhouse.ServerTimeMapper;
+import org.panjy.servicemetricsplatform.mapper.ServerTimeMapper;
 import org.panjy.servicemetricsplatform.service.ServerTimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

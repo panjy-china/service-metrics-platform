@@ -2,10 +2,14 @@ package org.panjy.servicemetricsplatform.entity;
 
 import java.io.Serializable;
 
+import jakarta.persistence.*;
+
 /**
  * 微信消息地址分析结果实体类
  * 对应数据库表：wechat_message_a_analyze_address
  */
+@Entity
+@Table(name = "wechat_message_a_analyze_address")
 public class WechatMessageAnalyzeAddress implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -13,26 +17,33 @@ public class WechatMessageAnalyzeAddress implements Serializable {
     /**
      * 客户微信号
      */
+    @Id
+    @Column(name = "wechat_id")
     private String wechatId;
     
     /**
      * 消息类型（例如：文本、图片等）
      */
+    @Column(name = "msg_type")
     private Integer msgType;
     
     /**
      * 微信服务器时间戳（毫秒）
      */
+    @Id
+    @Column(name = "wechat_time")
     private Long wechatTime;
     
     /**
      * 聊天消息的内容
      */
+    @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
     
     /**
      * AI分析后的地址
      */
+    @Column(name = "address", columnDefinition = "LONGTEXT")
     private String address;
     
     // 默认构造函数

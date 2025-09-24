@@ -2,7 +2,7 @@ package org.panjy.servicemetricsplatform.service;
 
 import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.Message;
-import org.panjy.servicemetricsplatform.mapper.mysql.MessageMapper;
+import org.panjy.servicemetricsplatform.mapper.MessageMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 @Service
-public class MysqlService {
+public class ClickHouseService {
     @Autowired
     private MessageMapper messageMapper;
 

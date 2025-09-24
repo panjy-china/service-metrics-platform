@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.mysql.MessageMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.MessageMapper">
     <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
         <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
         <id property="wechatId" column="wechatId"/>
@@ -59,4 +59,3 @@
         ORDER BY wechat_time ASC
     </select>
 </mapper>
-

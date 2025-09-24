@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.panjy.servicemetricsplatform.entity.Client;
-import org.panjy.servicemetricsplatform.mapper.clickhouse.ClientMapper;
+import org.panjy.servicemetricsplatform.mapper.ClientMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;

@@ -7,9 +7,9 @@ LABEL maintainer="service-metrics-platform" \
 
 WORKDIR /app
 
-# 安装必要的工具
+# 安装必要的工具（仅安装最基础的）
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl wget vim \
+    curl \
  && rm -rf /var/lib/apt/lists/*
 
 # 创建应用用户

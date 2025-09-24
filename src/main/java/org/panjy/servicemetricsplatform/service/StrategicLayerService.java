@@ -1,13 +1,15 @@
 package org.panjy.servicemetricsplatform.service;
 
 import org.panjy.servicemetricsplatform.entity.WechatActivity;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatAccountMapper;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatActivityMapper;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatGroupMessageMapper;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatMemberMapper;
-import org.panjy.servicemetricsplatform.mapper.mysql.WechatMessageMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatAccountMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatActivityMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatGroupMessageMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatMemberMapper;
+import org.panjy.servicemetricsplatform.mapper.WechatMessageMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,6 +17,8 @@ import java.util.*;
 
 @Service
 public class StrategicLayerService {
+    private static final Logger logger = LoggerFactory.getLogger(StrategicLayerService.class);
+    
     @Autowired
     WechatMessageMapper wechatMessageMapper;
     @Autowired
@@ -33,15 +37,24 @@ public class StrategicLayerService {
      * @return 新增用户的微信 ID 列表
      */
     public List<String> findNewUserByDay(Date begin) {
-        // 计算一天的结束时间（加 1 天减 1 毫秒）
+        logger.info("开始查询一天内的新增用户，开始时间: {}", begin);
+        
+        // 计算一天的结束时间（当天最后一秒），去除毫秒部分
         Calendar cal = Calendar.getInstance();
         cal.setTime(begin);
-        cal.add(Calendar.DAY_OF_MONTH, 1);
-        cal.add(Calendar.MILLISECOND, -1);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 0);
         Date end = cal.getTime();
+        
+        logger.info("查询时间范围: {} - {}", begin, end);
 
         // 调用 Mapper 方法
-        return wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        List<String> newUsers = wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        logger.info("查询到一天内新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+        
+        return newUsers;
     }
 
     /**
@@ -51,6 +64,8 @@ public class StrategicLayerService {
      * @return 新增用户的微信 ID 列表
      */
     public List<String> findNewUserByWeek(Date week) {
+        logger.info("开始查询一周内的新增用户，参考时间: {}", week);
+        
         Calendar cal = Calendar.getInstance();
         cal.setTime(week);
 
@@ -62,13 +77,19 @@ public class StrategicLayerService {
         cal.set(Calendar.MILLISECOND, 0);
         Date begin = cal.getTime();
 
-        // 设置为下周第一天减 1 毫秒（即本周最后一毫秒）
+        // 设置为下周第一天减 1 秒（即本周最后一秒），去除毫秒部分
         cal.add(Calendar.WEEK_OF_YEAR, 1);
-        cal.add(Calendar.MILLISECOND, -1);
+        cal.add(Calendar.SECOND, -1);
+        cal.set(Calendar.MILLISECOND, 0);
         Date end = cal.getTime();
+        
+        logger.info("查询时间范围: {} - {}", begin, end);
 
         // 调用 Mapper 方法
-        return wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        List<String> newUsers = wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        logger.info("查询到一周内新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+        
+        return newUsers;
     }
 
     /**
@@ -78,6 +99,8 @@ public class StrategicLayerService {
      * @return 新增用户的微信 ID 列表
      */
     public List<String> findNewUserByMonth(Date month) {
+        logger.info("开始查询一个月内的新增用户，参考时间: {}", month);
+        
         Calendar cal = Calendar.getInstance();
         cal.setTime(month);
 
@@ -89,13 +112,19 @@ public class StrategicLayerService {
         cal.set(Calendar.MILLISECOND, 0);
         Date begin = cal.getTime();
 
-        // 设置为下个月第一天减 1 毫秒（即本月最后一毫秒）
+        // 设置为下个月第一天减 1 秒（即本月最后一秒），去除毫秒部分
         cal.add(Calendar.MONTH, 1);
-        cal.add(Calendar.MILLISECOND, -1);
+        cal.add(Calendar.SECOND, -1);
+        cal.set(Calendar.MILLISECOND, 0);
         Date end = cal.getTime();
+        
+        logger.info("查询时间范围: {} - {}", begin, end);
 
         // 调用 Mapper 方法
-        return wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        List<String> newUsers = wechatMessageMapper.findMessageByContent("你已添加了", begin, end);
+        logger.info("查询到一个月内新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+        
+        return newUsers;
     }
 
 
@@ -105,26 +134,43 @@ public class StrategicLayerService {
      * @param currentTime 当前时间
      */
     public int getActiveUserCount(Date currentTime) {
+        logger.info("开始计算活跃用户数，查询日期: {}", currentTime);
+        
         // 获取私聊活跃用户
+        logger.info("开始查询私聊活跃用户");
         List<String> activeUsers = wechatMessageMapper.findActiveUsers(currentTime);
+        logger.info("查询到私聊活跃用户数: {}", activeUsers != null ? activeUsers.size() : 0);
+        
         // 获取群聊活跃用户
+        logger.info("开始查询群聊活跃用户");
         List<String> groupActivateUser = wechatGroupMessageMapper.findActiveUsers(currentTime);
+        logger.info("查询到群聊活跃用户数: {}", groupActivateUser != null ? groupActivateUser.size() : 0);
+        
         // 获取所有职工微信ID
+        logger.info("开始查询所有职工微信ID");
         List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
+        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
         
         // 转换为Set以提高查找效率
         Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
 
         // 合并并去重 activeUsers 和 groupActivateUser
         Set<String> allActiveUsers = new HashSet<>();
-        allActiveUsers.addAll(activeUsers);
-        allActiveUsers.addAll(groupActivateUser);
+        if (activeUsers != null) {
+            allActiveUsers.addAll(activeUsers);
+        }
+        if (groupActivateUser != null) {
+            allActiveUsers.addAll(groupActivateUser);
+        }
 
         // 去除合并后结果中出现的职工
         allActiveUsers.removeAll(staffWechatSet);
+        logger.info("去除职工后的活跃用户数: {}", allActiveUsers.size());
 
         // 返回活跃用户数
-        return allActiveUsers.size();
+        int activeUserCount = allActiveUsers.size();
+        logger.info("活跃用户数计算完成: {}", activeUserCount);
+        return activeUserCount;
     }
 
     /**
@@ -135,44 +181,65 @@ public class StrategicLayerService {
      * @return             留存率（百分比）
      */
     public double getRetentionRate(Date currentTime, int days) {
+        logger.info("开始计算 {} 日留存率，观测日期: {}", days, currentTime);
+        
         // 1. 获取指定日期新增的用户
         List<String> newUsers = findNewUserByDay(currentTime);
+        logger.info("获取到当天新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+        
         if (newUsers == null || newUsers.isEmpty()) {
             // 如果当天没有新增用户，直接返回0，避免除以0
+            logger.info("当天无新增用户，留存率返回 0.0");
             return 0.0;
         }
 
         // 2. 查询 days 天后仍然活跃的用户（私聊消息活跃）
+        logger.info("开始查询 {} 天后仍然活跃的私聊用户", days);
         List<String> userServived = wechatMessageMapper.findUserServived(currentTime, days);
+        logger.info("查询到 {} 天后仍然活跃的私聊用户数: {}", days, userServived != null ? userServived.size() : 0);
 
         // 3. 查询 days 天后仍然活跃的用户（群聊消息活跃）
+        logger.info("开始查询 {} 天后仍然活跃的群聊用户", days);
         List<String> groupUserServived = wechatGroupMessageMapper.findUserServived(currentTime, days);
+        logger.info("查询到 {} 天后仍然活跃的群聊用户数: {}", days, groupUserServived != null ? groupUserServived.size() : 0);
 
         // 4. 获取所有职工微信ID
+        logger.info("开始查询所有职工微信ID");
         List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
+        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
         Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
 
         // 5. 合并群聊和私聊的活跃用户，并去除职工
         Set<String> activeUsers = new HashSet<>();
-        activeUsers.addAll(userServived);
-        activeUsers.addAll(groupUserServived);
+        if (userServived != null) {
+            activeUsers.addAll(userServived);
+        }
+        if (groupUserServived != null) {
+            activeUsers.addAll(groupUserServived);
+        }
         activeUsers.removeAll(staffWechatSet); // 去除职工用户
+        logger.info("合并去重后的活跃用户数（已去除职工）: {}", activeUsers.size());
 
         // 6. 从新增用户中去除职工，得到真实的客户新增用户
         Set<String> realNewUsers = new HashSet<>(newUsers);
         realNewUsers.removeAll(staffWechatSet);
+        logger.info("去除职工后的实际新增客户数: {}", realNewUsers.size());
         
         if (realNewUsers.isEmpty()) {
             // 如果去除职工后没有新增客户，返回0
+            logger.info("去除职工后无新增客户，留存率返回 0.0");
             return 0.0;
         }
 
         // 7. 计算留存用户（只统计新增客户里仍然活跃的）
         Set<String> retainedUsers = new HashSet<>(realNewUsers);
         retainedUsers.retainAll(activeUsers); // 保证 retainedUsers ⊆ realNewUsers
+        logger.info("属于新增客户的留存用户数: {}", retainedUsers.size());
 
         // 8. 留存率 = 留存用户数 ÷ 新增客户数 × 100%
-        return retainedUsers.size() * 100.0 / realNewUsers.size();
+        double retentionRate = retainedUsers.size() * 100.0 / realNewUsers.size();
+        logger.info("{} 日留存率计算完成: {} / {} = {}%", days, retainedUsers.size(), realNewUsers.size(), retentionRate);
+        return retentionRate;
     }
 
     /**
@@ -187,7 +254,10 @@ public class StrategicLayerService {
      */
     public double getChurnRate(Date currentTime) {
         // 默认使用七日流失率
-        return getChurnRate(currentTime, 7);
+        logger.info("开始计算默认七日流失率，观测日期: {}", currentTime);
+        double churnRate = getChurnRate(currentTime, 7);
+        logger.info("默认七日流失率计算完成，结果: {}%", churnRate);
+        return churnRate;
     }
 
     /**
@@ -202,41 +272,63 @@ public class StrategicLayerService {
      * @return 流失率（百分比，范围 0.0 ~ 100.0）
      */
     public double getChurnRate(Date currentTime, int days) {
+        logger.info("开始计算 {} 日流失率，观测日期: {}", days, currentTime);
+        
         // 1. 获取当天新增用户
         List<String> newUsers = findNewUserByDay(currentTime);
+        logger.info("获取到当天新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+        
         if (newUsers == null || newUsers.isEmpty()) {
+            logger.info("当天无新增用户，流失率返回 0.0");
             return 0.0;
         }
 
         // 2. 获取流失用户（私聊 + 群聊）
         // 注意：这里使用现有的findInactiveUsers方法，该方法应该已经包含了合适的时间窗口逻辑
         // 如果需要更精确的时间窗口控制，可能需要在Mapper中添加带有days参数的方法
+        logger.info("开始查询 {} 天内不活跃的私聊用户", days);
         List<String> inactiveUsers = wechatMessageMapper.findInactiveUsers(currentTime);
+        logger.info("查询到不活跃的私聊用户数: {}", inactiveUsers != null ? inactiveUsers.size() : 0);
+        
+        logger.info("开始查询 {} 天内不活跃的群聊用户", days);
         List<String> groupInactiveUsers = wechatGroupMessageMapper.findInactiveUsers(currentTime);
+        logger.info("查询到不活跃的群聊用户数: {}", groupInactiveUsers != null ? groupInactiveUsers.size() : 0);
 
         // 3. 获取所有职工微信ID
+        logger.info("开始查询所有职工微信ID");
         List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
+        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
         Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
 
         // 4. 合并两类流失用户，并去除职工
         Set<String> churnUsers = new HashSet<>();
-        churnUsers.addAll(inactiveUsers);
-        churnUsers.addAll(groupInactiveUsers);
+        if (inactiveUsers != null) {
+            churnUsers.addAll(inactiveUsers);
+        }
+        if (groupInactiveUsers != null) {
+            churnUsers.addAll(groupInactiveUsers);
+        }
         churnUsers.removeAll(staffWechatSet); // 去除职工用户
+        logger.info("合并去重后的流失用户数（已去除职工）: {}", churnUsers.size());
 
         // 5. 从新增用户中去除职工，得到真实的客户新增用户
         Set<String> realNewUsers = new HashSet<>(newUsers);
         realNewUsers.removeAll(staffWechatSet);
+        logger.info("去除职工后的实际新增客户数: {}", realNewUsers.size());
         
         if (realNewUsers.isEmpty()) {
+            logger.info("去除职工后无新增客户，流失率返回 0.0");
             return 0.0;
         }
 
         // 6. 仅保留属于当天新增客户的流失用户
         churnUsers.retainAll(realNewUsers);
+        logger.info("属于当天新增客户的流失用户数: {}", churnUsers.size());
 
         // 7. 计算流失率
-        return (churnUsers.size() * 100.0) / realNewUsers.size();
+        double churnRate = (churnUsers.size() * 100.0) / realNewUsers.size();
+        logger.info("{} 日流失率计算完成: {} / {} = {}%", days, churnUsers.size(), realNewUsers.size(), churnRate);
+        return churnRate;
     }
 
     /**
@@ -246,18 +338,24 @@ public class StrategicLayerService {
      * @return 平均服务时长（天）
      */
     public double getAverageServiceTime(Date checkTime) {
+        logger.info("开始计算平均服务时间，查询日期: {}", checkTime);
+        
         // 1. 查询私聊活动
+        logger.info("开始查询私聊活动");
         List<WechatActivity> privateActivities = wechatActivityMapper.getWechatActivities(checkTime);
+        logger.info("查询到私聊活动数: {}", privateActivities != null ? privateActivities.size() : 0);
         if (privateActivities == null) privateActivities = Collections.emptyList();
 
         // 2. 查询群聊活动
+        logger.info("开始查询群聊活动");
         List<WechatActivity> groupActivities = wechatActivityMapper.getWechatGroupActivities(checkTime);
+        logger.info("查询到群聊活动数: {}", groupActivities != null ? groupActivities.size() : 0);
         if (groupActivities == null) groupActivities = Collections.emptyList();
 
-        System.out.println(privateActivities.size() + " " + groupActivities.size());
-
         // 3. 获取所有职工用户列表
+        logger.info("开始查询所有职工微信ID");
         List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
+        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
         Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
 
         // 4. 合并 first/last 活动时间
@@ -265,11 +363,10 @@ public class StrategicLayerService {
         Map<String, Date> lastActivityMap = new HashMap<>();
 
         // 私聊活动：first + last
+        logger.info("开始处理私聊活动数据");
         for (WechatActivity activity : privateActivities) {
-            System.out.println(activity);
             if (activity == null) continue;
             String wechatId = activity.getWechatId();
-        // if (!allUserSet.contains(wechatId)) continue; // 过滤无效用户
 
             Date firstTime = activity.getFirstActivityTime();
             Date lastTime = activity.getLastActivityTime();
@@ -281,8 +378,11 @@ public class StrategicLayerService {
                 lastActivityMap.put(wechatId, lastTime);
             }
         }
+        logger.info("处理完私聊活动数据，firstActivityMap大小: {}, lastActivityMap大小: {}", 
+                     firstActivityMap.size(), lastActivityMap.size());
 
         // 群聊活动：只算 last（first 不统计，避免干扰）
+        logger.info("开始处理群聊活动数据");
         for (WechatActivity activity : groupActivities) {
             if (activity == null) continue;
             String wechatId = activity.getWechatId();
@@ -293,26 +393,33 @@ public class StrategicLayerService {
                 lastActivityMap.put(wechatId, lastTime);
             }
         }
+        logger.info("处理完群聊活动数据，lastActivityMap大小: {}", lastActivityMap.size());
 
         // 5. 计算总服务时长
         long totalDurationMillis = 0L;
         int validCount = 0;
 
+        logger.info("开始计算总服务时长");
         for (String wechatId : firstActivityMap.keySet()) {
             Date firstTime = firstActivityMap.get(wechatId);
             Date lastTime = lastActivityMap.get(wechatId);
-        // System.out.println(firstTime + " " + lastTime);
             if (firstTime != null && lastTime != null && lastTime.after(firstTime)) {
                 totalDurationMillis += (lastTime.getTime() - firstTime.getTime());
                 validCount++;
             }
         }
+        logger.info("计算完成，有效用户数: {}, 总时长毫秒数: {}", validCount, totalDurationMillis);
 
         // 6. 防止除零
-        if (validCount == 0) return 0.0;
+        if (validCount == 0) {
+            logger.info("无有效用户数据，平均服务时间返回 0.0");
+            return 0.0;
+        }
 
         // 7. 转换为天
-        return totalDurationMillis / (validCount * 1000.0 * 60 * 60 * 24);
+        double averageServiceTime = totalDurationMillis / (validCount * 1000.0 * 60 * 60 * 24);
+        logger.info("平均服务时间计算完成: {} 天", averageServiceTime);
+        return averageServiceTime;
     }
 
     /**

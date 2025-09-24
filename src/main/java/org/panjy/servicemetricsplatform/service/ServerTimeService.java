@@ -1,8 +1,8 @@
 package org.panjy.servicemetricsplatform.service;
 
 import org.panjy.servicemetricsplatform.entity.ServerTime;
-import org.panjy.servicemetricsplatform.mapper.clickhouse.ServerTimeMapper;
-import org.panjy.servicemetricsplatform.mapper.clickhouse.OrderMapper;
+import org.panjy.servicemetricsplatform.mapper.ServerTimeMapper;
+import org.panjy.servicemetricsplatform.mapper.OrderMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package org.panjy.servicemetricsplatform.mapper.mysql;
+package org.panjy.servicemetricsplatform.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.panjy.servicemetricsplatform.entity.WechatAccount;

@@ -176,10 +176,10 @@ public class StrategicMetricsController {
     }
 
     /**
-     * 查询指定日期的新增用户（包含同比增长率）
+     * 查询指定日期的新增用户（包含日环比增长率）
      *
-     * @param date 查询日期 (格式: yyyy-MM-dd)
-     * @return 新增用户统计信息和同比增长率
+     * @param date 指定日期 (格式: yyyy-MM-dd)
+     * @return 日新增用户统计信息和日环比增长率
      */
     @GetMapping("/new-users/daily-growth/{date}")
     public ResponseEntity<?> getNewUsersByDayWithGrowth(@PathVariable("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
@@ -191,23 +191,43 @@ public class StrategicMetricsController {
                 );
             }
             
-            System.out.println("查询日期新增用户（含同比增长）: " + new SimpleDateFormat("yyyy-MM-dd").format(date));
+            System.out.println("查询日新增用户（含日环比增长）: " + new SimpleDateFormat("yyyy-MM-dd").format(date));
             
-            // 获取包含同比增长率的统计数据
-            Map<String, Object> growthStats = strategicLayerService.calculateDailyNewUsersWithGrowth(date);
+            // 添加详细的日志记录
+            System.out.println("日新增用户计算详细日志:");
+            System.out.println("  1. 输入参数检查通过，开始计算");
             
-            Map<String, Object> data = new HashMap<>();
-            data.put("date", new SimpleDateFormat("yyyy-MM-dd").format(date));
-            data.put("currentCount", growthStats.get("currentValue"));
-            data.put("previousDayCount", growthStats.get("previousDayValue"));
-            data.put("growthRate", growthStats.get("growthRate"));
-            data.put("growthRatePercent", growthStats.get("growthRate") + "%");
-            data.put("previousDayDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousDayDate")));
-            
-            return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+            try {
+                // 获取包含日环比增长率的统计数据
+                System.out.println("  2. 调用strategicLayerService.calculateDailyNewUsersWithGrowth方法");
+                Map<String, Object> growthStats = strategicLayerService.calculateDailyNewUsersWithGrowth(date);
+                System.out.println("  3. calculateDailyNewUsersWithGrowth方法返回结果: " + growthStats);
+                
+                Map<String, Object> data = new HashMap<>();
+                data.put("date", new SimpleDateFormat("yyyy-MM-dd").format(date));
+                data.put("currentDayCount", growthStats.get("currentValue"));
+                data.put("previousDayCount", growthStats.get("previousDayValue"));
+                data.put("growthRate", growthStats.get("growthRate"));
+                data.put("growthRatePercent", growthStats.get("growthRate") + "%");
+                data.put("previousDayDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousDayDate")));
+                
+                System.out.println("日新增用户计算完成: 当前值=" + growthStats.get("currentValue") + 
+                                 ", 前一天值=" + growthStats.get("previousDayValue") + 
+                                 ", 增长率=" + growthStats.get("growthRate") + "%");
+                
+                return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+                
+            } catch (Exception serviceException) {
+                System.err.println("  错误: 在strategicLayerService.calculateDailyNewUsersWithGrowth方法中发生异常");
+                System.err.println("  异常类型: " + serviceException.getClass().getName());
+                System.err.println("  异常信息: " + serviceException.getMessage());
+                serviceException.printStackTrace();
+                throw serviceException; // 重新抛出异常以被外层catch捕获
+            }
             
         } catch (Exception e) {
             System.err.println("查询日新增用户同比增长失败: " + e.getMessage());
+            System.err.println("异常堆栈跟踪:");
             e.printStackTrace();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
@@ -234,21 +254,41 @@ public class StrategicMetricsController {
             
             System.out.println("查询周新增用户（含周环比增长）: " + new SimpleDateFormat("yyyy-MM-dd").format(date));
             
-            // 获取包含周环比增长率的统计数据
-            Map<String, Object> growthStats = strategicLayerService.calculateWeeklyNewUsersWithGrowth(date);
+            // 添加详细的日志记录
+            System.out.println("周新增用户计算详细日志:");
+            System.out.println("  1. 输入参数检查通过，开始计算");
             
-            Map<String, Object> data = new HashMap<>();
-            data.put("weekDate", new SimpleDateFormat("yyyy-MM-dd").format(date));
-            data.put("currentWeekCount", growthStats.get("currentValue"));
-            data.put("previousWeekCount", growthStats.get("previousWeekValue"));
-            data.put("growthRate", growthStats.get("growthRate"));
-            data.put("growthRatePercent", growthStats.get("growthRate") + "%");
-            data.put("previousWeekDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousWeekDate")));
-            
-            return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+            try {
+                // 获取包含周环比增长率的统计数据
+                System.out.println("  2. 调用strategicLayerService.calculateWeeklyNewUsersWithGrowth方法");
+                Map<String, Object> growthStats = strategicLayerService.calculateWeeklyNewUsersWithGrowth(date);
+                System.out.println("  3. calculateWeeklyNewUsersWithGrowth方法返回结果: " + growthStats);
+                
+                Map<String, Object> data = new HashMap<>();
+                data.put("weekDate", new SimpleDateFormat("yyyy-MM-dd").format(date));
+                data.put("currentWeekCount", growthStats.get("currentValue"));
+                data.put("previousWeekCount", growthStats.get("previousWeekValue"));
+                data.put("growthRate", growthStats.get("growthRate"));
+                data.put("growthRatePercent", growthStats.get("growthRate") + "%");
+                data.put("previousWeekDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousWeekDate")));
+                
+                System.out.println("周新增用户计算完成: 当前值=" + growthStats.get("currentValue") + 
+                                 ", 上周值=" + growthStats.get("previousWeekValue") + 
+                                 ", 增长率=" + growthStats.get("growthRate") + "%");
+                
+                return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+                
+            } catch (Exception serviceException) {
+                System.err.println("  错误: 在strategicLayerService.calculateWeeklyNewUsersWithGrowth方法中发生异常");
+                System.err.println("  异常类型: " + serviceException.getClass().getName());
+                System.err.println("  异常信息: " + serviceException.getMessage());
+                serviceException.printStackTrace();
+                throw serviceException; // 重新抛出异常以被外层catch捕获
+            }
             
         } catch (Exception e) {
             System.err.println("查询周新增用户周环比增长失败: " + e.getMessage());
+            System.err.println("异常堆栈跟踪:");
             e.printStackTrace();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
@@ -275,21 +315,41 @@ public class StrategicMetricsController {
             
             System.out.println("查询月新增用户（含月环比增长）: " + new SimpleDateFormat("yyyy-MM-dd").format(date));
             
-            // 获取包含月环比增长率的统计数据
-            Map<String, Object> growthStats = strategicLayerService.calculateMonthlyNewUsersWithGrowth(date);
+            // 添加详细的日志记录
+            System.out.println("月新增用户计算详细日志:");
+            System.out.println("  1. 输入参数检查通过，开始计算");
             
-            Map<String, Object> data = new HashMap<>();
-            data.put("monthDate", new SimpleDateFormat("yyyy-MM-dd").format(date));
-            data.put("currentMonthCount", growthStats.get("currentValue"));
-            data.put("previousMonthCount", growthStats.get("previousMonthValue"));
-            data.put("growthRate", growthStats.get("growthRate"));
-            data.put("growthRatePercent", growthStats.get("growthRate") + "%");
-            data.put("previousMonthDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousMonthDate")));
-            
-            return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+            try {
+                // 获取包含月环比增长率的统计数据
+                System.out.println("  2. 调用strategicLayerService.calculateMonthlyNewUsersWithGrowth方法");
+                Map<String, Object> growthStats = strategicLayerService.calculateMonthlyNewUsersWithGrowth(date);
+                System.out.println("  3. calculateMonthlyNewUsersWithGrowth方法返回结果: " + growthStats);
+                
+                Map<String, Object> data = new HashMap<>();
+                data.put("monthDate", new SimpleDateFormat("yyyy-MM-dd").format(date));
+                data.put("currentMonthCount", growthStats.get("currentValue"));
+                data.put("previousMonthCount", growthStats.get("previousMonthValue"));
+                data.put("growthRate", growthStats.get("growthRate"));
+                data.put("growthRatePercent", growthStats.get("growthRate") + "%");
+                data.put("previousMonthDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousMonthDate")));
+                
+                System.out.println("月新增用户计算完成: 当前值=" + growthStats.get("currentValue") + 
+                                 ", 上月值=" + growthStats.get("previousMonthValue") + 
+                                 ", 增长率=" + growthStats.get("growthRate") + "%");
+                
+                return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+                
+            } catch (Exception serviceException) {
+                System.err.println("  错误: 在strategicLayerService.calculateMonthlyNewUsersWithGrowth方法中发生异常");
+                System.err.println("  异常类型: " + serviceException.getClass().getName());
+                System.err.println("  异常信息: " + serviceException.getMessage());
+                serviceException.printStackTrace();
+                throw serviceException; // 重新抛出异常以被外层catch捕获
+            }
             
         } catch (Exception e) {
             System.err.println("查询月新增用户月环比增长失败: " + e.getMessage());
+            System.err.println("异常堆栈跟踪:");
             e.printStackTrace();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
@@ -316,21 +376,41 @@ public class StrategicMetricsController {
             
             System.out.println("查询活跃用户数（含同比增长）: " + new SimpleDateFormat("yyyy-MM-dd").format(currentTime));
             
-            // 获取包含同比增长率的统计数据
-            Map<String, Object> growthStats = strategicLayerService.calculateActiveUsersWithGrowth(currentTime);
+            // 添加详细的日志记录
+            System.out.println("活跃用户数计算详细日志:");
+            System.out.println("  1. 输入参数检查通过，开始计算");
             
-            Map<String, Object> data = new HashMap<>();
-            data.put("currentTime", new SimpleDateFormat("yyyy-MM-dd").format(currentTime));
-            data.put("currentActiveUserCount", growthStats.get("currentValue"));
-            data.put("previousYearActiveUserCount", growthStats.get("previousYearValue"));
-            data.put("growthRate", growthStats.get("growthRate"));
-            data.put("growthRatePercent", growthStats.get("growthRate") + "%");
-            data.put("previousYearDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousYearDate")));
-            
-            return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+            try {
+                // 获取包含同比增长率的统计数据
+                System.out.println("  2. 调用strategicLayerService.calculateActiveUsersWithGrowth方法");
+                Map<String, Object> growthStats = strategicLayerService.calculateActiveUsersWithGrowth(currentTime);
+                System.out.println("  3. calculateActiveUsersWithGrowth方法返回结果: " + growthStats);
+                
+                Map<String, Object> data = new HashMap<>();
+                data.put("currentTime", new SimpleDateFormat("yyyy-MM-dd").format(currentTime));
+                data.put("currentActiveUserCount", growthStats.get("currentValue"));
+                data.put("previousYearActiveUserCount", growthStats.get("previousYearValue"));
+                data.put("growthRate", growthStats.get("growthRate"));
+                data.put("growthRatePercent", growthStats.get("growthRate") + "%");
+                data.put("previousYearDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) growthStats.get("previousYearDate")));
+                
+                System.out.println("活跃用户数计算完成: 当前值=" + growthStats.get("currentValue") + 
+                                 ", 上年同期值=" + growthStats.get("previousYearValue") + 
+                                 ", 增长率=" + growthStats.get("growthRate") + "%");
+                
+                return ResponseEntity.ok(createSuccessResponse("查询成功", data));
+                
+            } catch (Exception serviceException) {
+                System.err.println("  错误: 在strategicLayerService.calculateActiveUsersWithGrowth方法中发生异常");
+                System.err.println("  异常类型: " + serviceException.getClass().getName());
+                System.err.println("  异常信息: " + serviceException.getMessage());
+                serviceException.printStackTrace();
+                throw serviceException; // 重新抛出异常以被外层catch捕获
+            }
             
         } catch (Exception e) {
             System.err.println("查询活跃用户数同比增长失败: " + e.getMessage());
+            System.err.println("异常堆栈跟踪:");
             e.printStackTrace();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
@@ -348,10 +428,7 @@ public class StrategicMetricsController {
      * @return 流失率统计
      */
     @GetMapping("/churn-rate/{currentTime}")
-    public ResponseEntity<?> getChurnRate(
-            @PathVariable("currentTime") 
-            @DateTimeFormat(pattern = "yyyy-MM-dd") Date currentTime) {
-        
+    public ResponseEntity<?> getChurnRate(@PathVariable("currentTime") @DateTimeFormat(pattern = "yyyy-MM-dd") Date currentTime) {
         try {
             if (currentTime == null) {
                 System.err.println("流失率计算失败: 时间参数为空");
@@ -363,23 +440,41 @@ public class StrategicMetricsController {
             String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(currentTime);
             System.out.println("开始计算流失率: 日期=" + dateStr);
             
-            // 使用BigDecimal进行精确计算
-            double churnRateDouble = strategicLayerService.getChurnRate(currentTime);
-            BigDecimal churnRate = BigDecimal.valueOf(churnRateDouble)
-                    .setScale(2, RoundingMode.HALF_UP);
+            // 添加详细的日志记录
+            System.out.println("流失率计算详细日志:");
+            System.out.println("  1. 输入参数检查通过，开始计算");
             
-            System.out.println("流失率计算完成: 日期=" + dateStr + ", 流失率=" + churnRate + "%");
-            
-            Map<String, Object> data = new HashMap<>();
-            data.put("currentTime", dateStr);
-            data.put("churnRate", churnRate);
-            data.put("churnRatePercent", churnRate + "%");
-            
-            return ResponseEntity.ok(createSuccessResponse("计算成功", data));
+            try {
+                // 使用BigDecimal进行精确计算
+                System.out.println("  2. 调用strategicLayerService.getChurnRate方法");
+                double churnRateDouble = strategicLayerService.getChurnRate(currentTime);
+                System.out.println("  3. getChurnRate方法返回原始值: " + churnRateDouble);
+                
+                BigDecimal churnRate = BigDecimal.valueOf(churnRateDouble)
+                        .setScale(2, RoundingMode.HALF_UP);
+                System.out.println("  4. 转换为BigDecimal并四舍五入: " + churnRate);
+                
+                System.out.println("流失率计算完成: 日期=" + dateStr + ", 流失率=" + churnRate + "%");
+                
+                Map<String, Object> data = new HashMap<>();
+                data.put("currentTime", dateStr);
+                data.put("churnRate", churnRate);
+                data.put("churnRatePercent", churnRate + "%");
+                
+                return ResponseEntity.ok(createSuccessResponse("计算成功", data));
+                
+            } catch (Exception serviceException) {
+                System.err.println("  错误: 在strategicLayerService.getChurnRate方法中发生异常");
+                System.err.println("  异常类型: " + serviceException.getClass().getName());
+                System.err.println("  异常信息: " + serviceException.getMessage());
+                serviceException.printStackTrace();
+                throw serviceException; // 重新抛出异常以被外层catch捕获
+            }
             
         } catch (Exception e) {
             String dateStr = currentTime != null ? new SimpleDateFormat("yyyy-MM-dd").format(currentTime) : "null";
             System.err.println("计算流失率失败: 日期=" + dateStr + ", 错误信息=" + e.getMessage());
+            System.err.println("异常堆栈跟踪:");
             e.printStackTrace();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(

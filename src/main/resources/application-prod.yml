@@ -1,32 +1,18 @@
 # 生产环境配置
 spring:
-    
   datasource:
-    mysql:
-      # 生产环境数据库连接配置（需要根据实际情况修改）
-      jdbc-url: ${MYSQL_URL:jdbc:mysql://rm-uf6itdd69r9j2b45ato.mysql.rds.aliyuncs.com:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&connectionTimeZone=LOCAL}
-      username: ${MYSQL_USERNAME:jcs}
-      password: ${MYSQL_PASSWORD:Jueceshu2021}
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      hikari:
-        maximum-pool-size: 20
-        minimum-idle: 5
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        
-    clickhouse:
-      # ClickHouse数据库连接配置（需要根据实际情况修改）
-      jdbc-url: ${CLICKHOUSE_URL:jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION}
-      username: ${CLICKHOUSE_USERNAME:default}
-      password: ${CLICKHOUSE_PASSWORD:123456}
-      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
-      hikari:
-        maximum-pool-size: 10
-        minimum-idle: 2
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
+    # ClickHouse数据库连接配置（需要根据实际情况修改）
+    url: ${CLICKHOUSE_URL:jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION}
+    username: ${CLICKHOUSE_USERNAME:default}
+    password: ${CLICKHOUSE_PASSWORD:123456}
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
       
   jpa:
     hibernate:
@@ -37,7 +23,8 @@ spring:
           time_zone: Asia/Shanghai
         show_sql: false
         format_sql: false
-    database-platform: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.ClickHouseDialect
+    database-platform: org.hibernate.dialect.ClickHouseDialect
 
 # MyBatis配置
 mybatis:
@@ -65,9 +52,9 @@ server:
 logging:
   level:
     root: INFO
-    org.panjy.servicemetricsplatform: INFO
-    org.springframework.web: INFO
-    org.mybatis: INFO
+    org.panjy.servicemetricsplatform: DEBUG
+    org.springframework.web: DEBUG
+    org.mybatis: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -92,3 +79,6 @@ management:
 # LLM配置
 dashscope:
   apiKey: ${DASHSCOPE_API_KEY:sk-4d14608f5c5d40eb926fcd2f44258e20}
+
+# 启用调试模式
+debug: true
