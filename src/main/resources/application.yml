@@ -24,5 +24,24 @@ mybatis:
   type-aliases-package: org.panjy.servicemetricsplatform.entity
   config-location: classpath:mybatis-config.xml
 
+# 日志配置
+logging:
+  level:
+    root: INFO
+    org.panjy.servicemetricsplatform: DEBUG
+    org.springframework.web: INFO
+    org.mybatis: DEBUG
+    com.zaxxer.hikari: WARN
+    org.apache: WARN
+    org.panjy.servicemetricsplatform.mapper: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+  file:
+    name: logs/service-metrics-platform.log
+    max-size: 50MB
+    max-history: 10
+    total-size-cap: 1GB
+
 dashscope:
   apiKey: "sk-4d14608f5c5d40eb926fcd2f44258e20"

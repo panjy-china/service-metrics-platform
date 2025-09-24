@@ -9,7 +9,7 @@
     <settings>
         <!-- 开启下划线自动映射到驼峰命名 -->
         <setting name="mapUnderscoreToCamelCase" value="true"/>
-        <!-- 打印SQL到控制台，调试时有用 -->
+        <!-- 使用STDOUT_LOGGING记录SQL日志，可以显示详细结果 -->
         <setting name="logImpl" value="STDOUT_LOGGING"/>
     </settings>
 

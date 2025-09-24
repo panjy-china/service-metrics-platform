@@ -22,6 +22,18 @@ public class WechatActivity {
     public Date getLastActivityTime() {
         return lastActivityTime;
     }
+    
+    public void setWechatId(String wechatId) {
+        this.wechatId = wechatId;
+    }
+    
+    public void setFirstActivityTime(Date firstActivityTime) {
+        this.firstActivityTime = firstActivityTime;
+    }
+    
+    public void setLastActivityTime(Date lastActivityTime) {
+        this.lastActivityTime = lastActivityTime;
+    }
 
     /**
      * 计算该用户的服务时长（毫秒）
@@ -31,5 +43,14 @@ public class WechatActivity {
             return 0;
         }
         return lastActivityTime.getTime() - firstActivityTime.getTime();
+    }
+    
+    @Override
+    public String toString() {
+        return "WechatActivity{" +
+                "wechatId='" + wechatId + '\'' +
+                ", firstActivityTime=" + firstActivityTime +
+                ", lastActivityTime=" + lastActivityTime +
+                '}';
     }
 }

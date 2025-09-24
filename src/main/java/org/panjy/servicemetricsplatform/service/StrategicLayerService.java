@@ -341,15 +341,47 @@ public class StrategicLayerService {
         logger.info("开始计算平均服务时间，查询日期: {}", checkTime);
         
         // 1. 查询私聊活动
-        logger.info("开始查询私聊活动");
+        logger.debug("开始查询私聊活动");
         List<WechatActivity> privateActivities = wechatActivityMapper.getWechatActivities(checkTime);
         logger.info("查询到私聊活动数: {}", privateActivities != null ? privateActivities.size() : 0);
+        
+        // 添加详细的调试信息
+        if (privateActivities != null) {
+            logger.debug("私聊活动详情:");
+            for (int i = 0; i < privateActivities.size(); i++) {
+                WechatActivity activity = privateActivities.get(i);
+                logger.debug("  [{}] wechatId: {}, firstTime: {}, lastTime: {}", 
+                    i, 
+                    activity != null ? activity.getWechatId() : "null",
+                    activity != null ? activity.getFirstActivityTime() : "null",
+                    activity != null ? activity.getLastActivityTime() : "null");
+            }
+        } else {
+            logger.warn("私聊活动查询返回null");
+        }
+        
         if (privateActivities == null) privateActivities = Collections.emptyList();
 
         // 2. 查询群聊活动
-        logger.info("开始查询群聊活动");
+        logger.debug("开始查询群聊活动");
         List<WechatActivity> groupActivities = wechatActivityMapper.getWechatGroupActivities(checkTime);
         logger.info("查询到群聊活动数: {}", groupActivities != null ? groupActivities.size() : 0);
+        
+        // 添加详细的调试信息
+        if (groupActivities != null) {
+            logger.debug("群聊活动详情:");
+            for (int i = 0; i < groupActivities.size(); i++) {
+                WechatActivity activity = groupActivities.get(i);
+                logger.debug("  [{}] wechatId: {}, firstTime: {}, lastTime: {}", 
+                    i, 
+                    activity != null ? activity.getWechatId() : "null",
+                    activity != null ? activity.getFirstActivityTime() : "null",
+                    activity != null ? activity.getLastActivityTime() : "null");
+            }
+        } else {
+            logger.warn("群聊活动查询返回null");
+        }
+        
         if (groupActivities == null) groupActivities = Collections.emptyList();
 
         // 3. 获取所有职工用户列表
@@ -366,10 +398,19 @@ public class StrategicLayerService {
         logger.info("开始处理私聊活动数据");
         for (WechatActivity activity : privateActivities) {
             if (activity == null) continue;
+            logger.debug("处理私聊活动: {}", activity);
             String wechatId = activity.getWechatId();
+            
+            // 添加空值检查
+            if (wechatId == null || wechatId.isEmpty()) {
+                logger.warn("跳过wechatId为空的私聊活动记录");
+                continue;
+            }
 
             Date firstTime = activity.getFirstActivityTime();
             Date lastTime = activity.getLastActivityTime();
+            
+            logger.debug("wechatId: {}, firstTime: {}, lastTime: {}", wechatId, firstTime, lastTime);
 
             if (firstTime != null && (!firstActivityMap.containsKey(wechatId) || firstTime.before(firstActivityMap.get(wechatId)))) {
                 firstActivityMap.put(wechatId, firstTime);
@@ -385,10 +426,23 @@ public class StrategicLayerService {
         logger.info("开始处理群聊活动数据");
         for (WechatActivity activity : groupActivities) {
             if (activity == null) continue;
+            logger.debug("处理群聊活动: {}", activity);
             String wechatId = activity.getWechatId();
-            if (staffWechatSet.contains(wechatId)) continue; // 过滤职工用户
+            
+            // 添加空值检查
+            if (wechatId == null || wechatId.isEmpty()) {
+                logger.warn("跳过wechatId为空的群聊活动记录");
+                continue;
+            }
+            
+            if (staffWechatSet.contains(wechatId)) {
+                logger.debug("跳过职工用户: {}", wechatId);
+                continue; // 过滤职工用户
+            }
 
             Date lastTime = activity.getLastActivityTime();
+            logger.debug("群聊活动 wechatId: {}, lastTime: {}", wechatId, lastTime);
+            
             if (lastTime != null && (!lastActivityMap.containsKey(wechatId) || lastTime.after(lastActivityMap.get(wechatId)))) {
                 lastActivityMap.put(wechatId, lastTime);
             }
@@ -399,13 +453,31 @@ public class StrategicLayerService {
         long totalDurationMillis = 0L;
         int validCount = 0;
 
-        logger.info("开始计算总服务时长");
+        logger.info("开始计算总服务时长，firstActivityMap大小: {}, lastActivityMap大小: {}", 
+                   firstActivityMap.size(), lastActivityMap.size());
+                   
+        // 添加详细的调试信息
+        logger.debug("firstActivityMap内容:");
+        firstActivityMap.forEach((k, v) -> logger.debug("  {}: {}", k, v));
+        
+        logger.debug("lastActivityMap内容:");
+        lastActivityMap.forEach((k, v) -> logger.debug("  {}: {}", k, v));
+
         for (String wechatId : firstActivityMap.keySet()) {
             Date firstTime = firstActivityMap.get(wechatId);
             Date lastTime = lastActivityMap.get(wechatId);
+            
+            logger.debug("处理用户 {}: firstTime={}, lastTime={}", wechatId, firstTime, lastTime);
+            
             if (firstTime != null && lastTime != null && lastTime.after(firstTime)) {
-                totalDurationMillis += (lastTime.getTime() - firstTime.getTime());
+                long duration = (lastTime.getTime() - firstTime.getTime());
+                totalDurationMillis += duration;
                 validCount++;
+                logger.debug("用户 {} 有效，服务时长: {} 毫秒", wechatId, duration);
+            } else {
+                logger.debug("用户 {} 无效，firstTime: {}, lastTime: {}, lastTime.after(firstTime): {}", 
+                           wechatId, firstTime, lastTime, 
+                           (firstTime != null && lastTime != null) ? lastTime.after(firstTime) : "N/A");
             }
         }
         logger.info("计算完成，有效用户数: {}, 总时长毫秒数: {}", validCount, totalDurationMillis);

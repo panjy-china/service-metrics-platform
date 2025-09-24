@@ -572,15 +572,14 @@ public class StrategicMetricsController {
             BigDecimal currentServiceTime = (BigDecimal) serviceTimeGrowth.get("currentValue");
             BigDecimal previousServiceTime = (BigDecimal) serviceTimeGrowth.get("previousYearValue");
             overview.put("averageServiceTimeDays", currentServiceTime);
-            overview.put("averageServiceTimeFormatted", formatServiceTime(currentServiceTime.doubleValue()));
+            overview.put("averageServiceTimeFormatted", formatServiceTime(currentServiceTime != null ? currentServiceTime.doubleValue() : 0.0));
             overview.put("serviceTimeGrowthRate", serviceTimeGrowth.get("growthRate"));
             overview.put("previousYearAverageServiceTimeDays", previousServiceTime);
-            overview.put("previousYearAverageServiceTimeFormatted", formatServiceTime(previousServiceTime.doubleValue()));
+            overview.put("previousYearAverageServiceTimeFormatted", formatServiceTime(previousServiceTime != null ? previousServiceTime.doubleValue() : 0.0));
             
-            // 上年同期日期
-            overview.put("previousYearDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) newUsersGrowth.get("previousYearDate")));
-            // 前一天日期
-            overview.put("previousDayDate", new SimpleDateFormat("yyyy-MM-dd").format((Date) newUsersGrowth.get("previousDayDate")));
+            // 安全地处理日期字段
+            handleDateField(overview, newUsersGrowth, "previousYearDate", "previousYearDate");
+            handleDateField(overview, newUsersGrowth, "previousDayDate", "previousDayDate");
             
             return ResponseEntity.ok(createSuccessResponse("获取概览成功", overview));
             
@@ -593,7 +592,23 @@ public class StrategicMetricsController {
             );
         }
     }
-
+    
+    /**
+     * 安全地处理日期字段
+     * @param targetMap 目标Map
+     * @param sourceMap 源Map
+     * @param sourceKey 源键名
+     * @param targetKey 目标键名
+     */
+    private void handleDateField(Map<String, Object> targetMap, Map<String, Object> sourceMap, String sourceKey, String targetKey) {
+        Object dateObj = sourceMap.get(sourceKey);
+        if (dateObj instanceof Date) {
+            targetMap.put(targetKey, new SimpleDateFormat("yyyy-MM-dd").format((Date) dateObj));
+        } else {
+            targetMap.put(targetKey, null);
+        }
+    }
+    
     /**
      * 格式化服务时间显示
      *

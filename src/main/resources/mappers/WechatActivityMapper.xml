@@ -7,11 +7,11 @@
 
     <resultMap id="WechatActivityMap" type="org.panjy.servicemetricsplatform.entity.WechatActivity">
         <result property="wechatId" column="wechat_id"/>
-        <result property="firstActivityTime" column="first_activity_time"/>
-        <result property="lastActivityTime" column="last_activity_time"/>
+        <result property="firstActivityTime" column="first_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
+        <result property="lastActivityTime" column="last_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
     </resultMap>
 
-    <select id="getWechatActivities" resultType="org.panjy.servicemetricsplatform.entity.WechatActivity">
+    <select id="getWechatActivities" resultMap="WechatActivityMap">
         SELECT
             t.friend_wechat_id AS wechat_id,
             t.first_activity_time,
@@ -21,14 +21,14 @@
                      fa.friend_wechat_id,
                      MIN(fa.chat_time) AS first_activity_time,
                      MAX(fa.chat_time) AS last_activity_time
-                 FROM wechat_message fa
+                 FROM aikang.wechat_message fa
                  GROUP BY fa.friend_wechat_id
              ) t
         WHERE t.first_activity_time BETWEEN #{checkTime}
                   AND addDays(toDateTime(#{checkTime}), 1)
     </select>
 
-    <select id="getWechatGroupActivities" resultType="org.panjy.servicemetricsplatform.entity.WechatActivity">
+    <select id="getWechatGroupActivities" resultMap="WechatActivityMap">
         SELECT
             t.sender AS wechat_id,
             fromUnixTimestamp(toInt64(t.first_activity_time / 1000)) AS first_activity_time,
@@ -38,7 +38,7 @@
                      fa.sender,
                      MIN(fa.wechat_time) AS first_activity_time,
                      MAX(fa.wechat_time) AS last_activity_time
-                 FROM wechat_group_message fa
+                 FROM aikang.wechat_group_message fa
                  GROUP BY fa.sender
              ) t
         WHERE t.first_activity_time BETWEEN toUnixTimestamp(#{checkTime}) * 1000
