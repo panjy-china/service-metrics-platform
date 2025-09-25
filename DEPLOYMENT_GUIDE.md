@@ -143,7 +143,7 @@ docker-compose up -d
 docker-compose ps
 
 # 检查应用健康状态
-curl http://localhost:8080/api/order-metrics/health
+curl http://localhost:9712/api/order-metrics/health
 
 # 查看应用日志
 docker-compose logs -f service-metrics-platform
@@ -202,9 +202,9 @@ git pull
 ### 性能监控
 
 访问以下端点进行监控：
-- 健康检查: `http://your-server:8080/api/order-metrics/health`
-- 应用指标: `http://your-server:8080/actuator/metrics`
-- 健康状态: `http://your-server:8080/actuator/health`
+- 健康检查: `http://your-server:9712/api/order-metrics/health`
+- 应用指标: `http://your-server:9712/actuator/metrics`
+- 健康状态: `http://your-server:9712/actuator/health`
 
 ### 备份策略
 
@@ -287,7 +287,7 @@ docker-compose ps
 sudo ufw status
 
 # 测试本地访问
-curl http://localhost:8080/api/order-metrics/health
+curl http://localhost:9712/api/order-metrics/health
 ```
 
 #### 4. 内存不足

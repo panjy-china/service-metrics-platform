@@ -616,8 +616,7 @@ public class OrderMetricsController {
     }
 
     /**
-     * 健康检查接口
-     * 验证订单服务的可用性
+     * 健康检查端点
      * 
      * @return 服务状态信息
      */
@@ -629,9 +628,7 @@ public class OrderMetricsController {
         try {
             logger.debug("执行订单指标服务健康检查");
             
-            // 简单的服务可用性检查
-            BigDecimal testResult = orderService.calculateCurrentMonthAvgOrdersPerCustomer();
-            
+            // 简单的服务可用性检查（不依赖数据库）
             response.put("success", true);
             response.put("message", "订单指标服务运行正常");
             response.put("service", "OrderMetricsController");

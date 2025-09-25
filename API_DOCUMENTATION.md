@@ -14,7 +14,7 @@ Service Metrics Platform 是一个服务指标分析平台，提供微信相关�
 ## 通用响应格式
 
 ### 成功响应格式
-```json
+``json
 {
     "success": true,
     "message": "操作成功",
@@ -24,7 +24,7 @@ Service Metrics Platform 是一个服务指标分析平台，提供微信相关�
 ```
 
 ### 错误响应格式
-```json
+``json
 {
     "success": false,
     "message": "错误描述",
@@ -330,13 +330,13 @@ GET /api/strategic/new-users/daily-growth/2024-01-15
 ```
 
 **响应示例**:
-```json
+``json
 {
     "success": true,
     "message": "查询成功",
     "data": {
         "date": "2024-01-15",
-        "currentCount": 10,
+        "currentDayCount": 10,
         "previousDayCount": 8,
         "growthRate": "25.00",
         "growthRatePercent": "25.00%",
@@ -392,41 +392,40 @@ GET /api/strategic/new-users/monthly-growth/2024-01-15
     "message": "查询成功",
     "data": {
         "monthDate": "2024-01-15",
-        "currentMonthCount": 200,
-        "previousMonthCount": 180,
-        "growthRate": "11.11",
-        "growthRatePercent": "11.11%",
+        "currentMonthCount": 150,
+        "previousMonthCount": 120,
+        "growthRate": "25.00",
+        "growthRatePercent": "25.00%",
         "previousMonthDate": "2023-12-15"
     },
     "timestamp": 1705123456789
 }
 ```
 
-### 3.3 活跃用户接口
+### 3.3 留存率接口
 
-#### 3.3.1 活跃用户数增长率
-- **URL**: `GET /api/strategic/active-users-growth/{currentTime}`
-- **描述**: 查询指定时间的活跃用户数及同比增长率
+#### 3.3.1 用户留存率
+- **URL**: `GET /api/strategic/retention-rate/{days}/{currentTime}`
+- **描述**: 计算指定日期的用户留存率
 - **路径参数**:
-  - `currentTime` (string, required): 当前时间，格式: `yyyy-MM-dd`
+  - `days` (integer, required): 留存天数，可选值: 3, 7, 10
+  - `currentTime` (string, required): 指定日期，格式: `yyyy-MM-dd`
 
 **请求示例**:
 ```
-GET /api/strategic/active-users-growth/2024-01-15
+GET /api/strategic/retention-rate/7/2024-01-15
 ```
 
 **响应示例**:
 ```json
 {
     "success": true,
-    "message": "查询成功",
+    "message": "计算成功",
     "data": {
         "currentTime": "2024-01-15",
-        "currentActiveUserCount": 1500,
-        "previousYearActiveUserCount": 1200,
-        "growthRate": "25.00",
-        "growthRatePercent": "25.00%",
-        "previousYearDate": "2023-01-15"
+        "days": 7,
+        "retentionRate": "65.25",
+        "retentionRatePercent": "65.25%"
     },
     "timestamp": 1705123456789
 }
@@ -446,7 +445,7 @@ GET /api/strategic/churn-rate/2024-01-15
 ```
 
 **响应示例**:
-```json
+``json
 {
     "success": true,
     "message": "计算成功",
@@ -473,7 +472,7 @@ GET /api/strategic/average-service-time-growth/2024-01-15
 ```
 
 **响应示例**:
-```json
+``json
 {
     "success": true,
     "message": "计算成功",
@@ -603,34 +602,6 @@ GET /analyze/address/distribution
 GET /analyze/address/2024-01-15
 ```
 
-**响应示例**:
-```json
-{
-    "success": true,
-    "message": "地址分析处理完成",
-    "data": [
-        {
-            "sender": "user123",
-            "type": "AddressAnalysis",
-            "message": "地址分析结果: 北京市朝阳区 (原文: 我在朝阳区这边)",
-            "chatTime": "2024-01-15T10:30:00"
-        }
-    ],
-    "totalFound": 50,
-    "processedCount": 50,
-    "extractedAddresses": 35,
-    "savedToDatabase": 35,
-    "batchCount": 5,
-    "queryDate": "2024-01-15"
-}
-```
-
-**说明**:
-- 使用分批处理机制，每批处理10条消息
-- 包含重试机制，最大重试3次
-- 自动保存分析结果到数据库
-- 支持去重，避免重复分析同一条消息
-
 ---
 
 ## 5. 订单指标 API (Order Metrics)
@@ -737,37 +708,7 @@ GET /api/order-metrics/monthly-stats/2024-01
 ```
 
 **响应示例**:
-```json
-{
-    "success": true,
-    "message": "查询成功",
-    "data": {
-        "period": "2024-01",
-        "previousPeriod": "2023-12",
-        "avgOrdersPerCustomer": "2.50",
-        "prevAvgOrdersPerCustomer": "2.20",
-        "avgOrdersGrowthRate": "13.64",
-        "avgOrdersGrowthRatePercent": "13.64%",
-        "avgSalesPerCustomer": "1250.00",
-        "prevAvgSalesPerCustomer": "1100.00",
-        "avgSalesGrowthRate": "13.64",
-        "avgSalesGrowthRatePercent": "13.64%"
-    },
-    "description": "指定月份订单综合统计数据（包含同比增长）"
-}
-```
-
-#### 5.3.2 当月综合统计
-- **URL**: `GET /api/order-metrics/current-month-stats`
-- **描述**: 获取当月综合统计数据，包含同比增长率（向后兼容接口）
-
-**请求示例**:
-```
-GET /api/order-metrics/current-month-stats
-```
-
-**响应示例**:
-```json
+``json
 {
     "success": true,
     "message": "查询成功",
@@ -807,50 +748,27 @@ GET /api/order-metrics/overview
         "period": "2024-01",
         "previousPeriod": "2023-12",
         "avgOrdersPerCustomer": "2.50",
+        "prevAvgOrdersPerCustomer": "2.20",
         "avgOrdersGrowthRate": "13.64",
         "avgOrdersGrowthRatePercent": "13.64%",
         "avgSalesPerCustomer": "1250.00",
+        "prevAvgSalesPerCustomer": "1100.00",
         "avgSalesGrowthRate": "13.64",
-        "avgSalesGrowthRatePercent": "13.64%",
-        "calculationMethod": "基于ACCOUNT_NUMBER常量计算人均指标，同比上月增长率"
+        "avgSalesGrowthRatePercent": "13.64%"
     },
-    "description": "订单核心指标概览（包含同比增长）"
+    "description": "当月订单综合统计数据（包含同比增长）"
 }
 ```
 
-### 5.5 健康检查接口
+### 5.5 服务时间接口
 
-#### 5.5.1 服务健康检查
-- **URL**: `GET /api/order-metrics/health`
-- **描述**: 验证订单服务的可用性
-
-**请求示例**:
-```
-GET /api/order-metrics/health
-```
-
-**响应示例**:
-```json
-{
-    "success": true,
-    "message": "订单指标服务运行正常",
-    "service": "OrderMetricsController",
-    "status": "healthy",
-    "timestamp": 1705123456789
-}
-```
-
-### 5.6 平均成交天数接口
-
-#### 5.6.1 获取指定客户的服务时间
-- **URL**: `GET /api/order-metrics/service-time/client/{clientId}`
-- **描述**: 获取指定客户的服务时间（最晚下单时间 - 最早下单时间）
-- **路径参数**:
-  - `clientId` (string, required): 客户ID
+#### 5.5.1 获取指定客户的成交天数
+- **URL**: `GET /api/order-metrics/service-time/{clientId}`
+- **描述**: 获取指定客户的成交天数（最晚下单时间 - 最早下单时间）
 
 **请求示例**:
 ```
-GET /api/order-metrics/service-time/client/CUST001
+GET /api/order-metrics/service-time/CUST001
 ```
 
 **响应示例**:
@@ -864,7 +782,7 @@ GET /api/order-metrics/service-time/client/CUST001
 }
 ```
 
-#### 5.6.2 获取所有客户的平均成交天数
+#### 5.5.2 获取所有客户的平均成交天数
 - **URL**: `GET /api/order-metrics/average-service-time`
 - **描述**: 获取所有客户的平均成交天数（最晚下单时间 - 最早下单时间）
 
@@ -883,9 +801,9 @@ GET /api/order-metrics/average-service-time
 }
 ```
 
-### 5.7 客户分析接口
+### 5.6 客户分析接口
 
-#### 5.7.1 获取指定日期之后首次下单的客户列表
+#### 5.6.1 获取指定日期之后首次下单的客户列表
 - **URL**: `GET /api/order-metrics/new-clients-after/{dateStr}`
 - **描述**: 获取在指定日期之后首次下单的客户列表
 - **路径参数**:
@@ -908,7 +826,7 @@ GET /api/order-metrics/new-clients-after/2024-01-01 00:00:00
 }
 ```
 
-#### 5.7.2 计算指定日期之后用户的十日成交转换率
+#### 5.6.2 计算指定日期之后用户的十日成交转换率
 - **URL**: `GET /api/order-metrics/ten-day-conversion-rate/{dateStr}`
 - **描述**: 计算指定日期之后用户的十日成交转换率（服务时间在2天到10天之间的用户数 / 指定日期之后用户数）
 - **路径参数**:
@@ -931,7 +849,7 @@ GET /api/order-metrics/ten-day-conversion-rate/2024-01-01 00:00:00
 }
 ```
 
-#### 5.7.3 计算指定日期之后用户的十五日成交转换率
+#### 5.6.3 计算指定日期之后用户的十五日成交转换率
 - **URL**: `GET /api/order-metrics/fifteen-day-conversion-rate/{dateStr}`
 - **描述**: 计算指定日期之后用户的十五日成交转换率（服务时间在2天到15天之间的用户数 / 指定日期之后用户数）
 - **路径参数**:
@@ -948,146 +866,172 @@ GET /api/order-metrics/fifteen-day-conversion-rate/2024-01-01 00:00:00
     "success": true,
     "message": "计算成功",
     "date": "2024-01-01 00:00:00",
-    "conversionRate": 0.78,
-    "conversionRatePercentage": "78.00%",
+    "conversionRate": 0.45,
+    "conversionRatePercentage": "45.00%",
     "description": "十五日成交转换率（服务时间在2天到15天之间的用户数 / 指定日期之后用户数）"
 }
 ```
 
 ---
 
-## 错误代码说明
+## 6. 综合指标 API (Comprehensive Metrics)
 
-| 错误代码 | 描述 | HTTP状态码 |
-|---------|------|-----------|
-| INVALID_DATE | 日期参数无效 | 400 |
-| INVALID_TIME | 时间参数无效 | 400 |
-| QUERY_ERROR | 查询失败 | 500 |
-| CALCULATION_ERROR | 计算失败 | 500 |
-| OVERVIEW_ERROR | 获取概览失败 | 500 |
-| SERVICE_ERROR | 服务异常 | 503 |
-| PROCESSING_ERROR | 处理失败 | 500 |
-| NO_DATA_FOUND | 未找到数据 | 404 |
+**Base Path**: `/api/comprehensive`
 
-## 注意事项
+### 6.1 综合指标数据接口
 
-1. **日期格式**: 所有日期参数必须严格按照 `yyyy-MM-dd` 格式提供
-2. **月份格式**: 月份参数必须按照 `YYYY-MM` 格式提供
-3. **时间格式**: 时间参数必须按照 `yyyy-MM-dd HH:mm:ss` 格式提供
-4. **数值精度**: 所有数值计算结果保留2位小数
-5. **增长率计算**: 增长率 = (当前值 - 上期值) / 上期值 × 100%
-6. **时区**: 所有时间均基于服务器本地时区
-7. **数据范围**: 查询范围依赖于数据库中的实际数据
-8. **批量处理**: 地址分析接口使用批量处理机制，避免超时和内存问题
-
-## 使用示例
-
-### 获取综合业务概览
-```bash
-# 获取策略指标概览
-curl -X GET "http://localhost:8080/api/strategic/overview-growth/2024-01-15"
-
-# 获取订单指标概览
-curl -X GET "http://localhost:8080/api/order-metrics/overview"
-```
-
-### 服务时间接口
-```bash
-# 处理指定日期之后的所有记录，计算平均服务时间并写入到tbl_ServerTime表中
-curl -X POST "http://localhost:8080/api/server-time/process-after/2024-01-01"
-
-# 查询指定日期之后的所有服务时间记录
-curl -X GET "http://localhost:8080/api/server-time/after/2024-01-01"
-```
-
-## 新增服务时间接口说明
-
-### 6.1 处理指定日期之后的服务时间记录
-- **URL**: `POST /api/server-time/process-after/{dateStr}`
-- **描述**: 处理指定日期之后的所有记录：查询指定日期后出现的用户id，之后查询该用户id的最早一条记录以及最晚一条记录，将两者之差作为服务时间
+#### 6.1.1 获取综合指标数据
+- **URL**: `GET /api/comprehensive/metrics/{date}`
+- **描述**: 获取包含性别、年龄、体重、地区分布，本日、本周、本月新增及其环比，三日留存率、七日留存率、十日留存率、七日流失率、十日转化率、十五日转化率，人均成交客户数及成交销售额及其增长比例，平均服务天数及成交天数以及其增长比例的综合数据
 - **路径参数**:
-  - `dateStr` (string, required): 指定日期，格式: `yyyy-MM-dd`
+  - `date` (string, required): 查询日期，格式: `yyyy-MM-dd`
 
 **请求示例**:
 ```
-POST /api/server-time/process-after/2024-01-01
+GET /api/comprehensive/metrics/2024-01-15
 ```
 
 **响应示例**:
-```json
-{
-    "success": true,
-    "message": "处理成功",
-    "date": "2024-01-01",
-    "description": "已将指定日期之后的所有记录的每个用户服务时间写入到tbl_ServerTime表中"
-}
 ```
-
-### 6.2 查询指定日期之后的服务时间记录
-- **URL**: `GET /api/server-time/after/{dateStr}`
-- **描述**: 查询指定日期之后的所有服务时间记录
-- **路径参数**:
-  - `dateStr` (string, required): 指定日期，格式: `yyyy-MM-dd`
-
-**请求示例**:
-```
-GET /api/server-time/after/2024-01-01
-```
-
-**响应示例**:
-``json
 {
     "success": true,
     "message": "查询成功",
-    "date": "2024-01-01",
-    "recordCount": 15,
-    "serverTimes": [
-        {
-            "colCltID": "CUST001",
-            "colSerTi": 86400,
-            "createTime": "2024-01-01T10:00:00",
-            "updateTime": "2024-01-01T10:00:00"
+    "data": {
+        // 客户性别分布数据
+        "genderDistribution": [
+            {
+                "gender": "男",     // 性别
+                "count": 120        // 对应人数
+            },
+            {
+                "gender": "女",     // 性别
+                "count": 105        // 对应人数
+            }
+        ],
+        // 客户年龄分布数据
+        "ageDistribution": [
+            {
+                "ageGroup": "18-24岁",  // 年龄段
+                "count": 45             // 对应人数
+            },
+            {
+                "ageGroup": "25-34岁",  // 年龄段
+                "count": 75             // 对应人数
+            }
+        ],
+        // 客户体重分布数据
+        "weightDistribution": [
+            {
+                "weightGroup": "50-60kg",   // 体重范围
+                "count": 35                 // 对应人数
+            },
+            {
+                "weightGroup": "60-70kg",   // 体重范围
+                "count": 50                 // 对应人数
+            }
+        ],
+        // 客户地区分布数据
+        "regionDistribution": [
+            {
+                "province": "北京",     // 省份
+                "count": 128            // 对应人数
+            },
+            {
+                "province": "上海",     // 省份
+                "count": 95             // 对应人数
+            }
+        ],
+        // 日新增用户数据及其环比
+        "dailyNewUsers": {
+            "currentValue": 10,             // 当前日期新增用户数
+            "previousDayValue": 8,          // 前一日新增用户数
+            "growthRate": "25.00",          // 环比增长率
+            "date": "2024-01-15",           // 当前日期
+            "previousDayDate": "2024-01-14" // 前一日日期
         },
-        // ... 更多记录
-    ],
-    "description": "指定日期之后的所有服务时间记录"
+        // 周新增用户数据及其环比
+        "weeklyNewUsers": {
+            "currentValue": 50,                 // 当前周新增用户数
+            "previousWeekValue": 45,            // 上一周新增用户数
+            "growthRate": "11.11",              // 环比增长率
+            "weekDate": "2024-01-15",           // 当前周日期
+            "previousWeekDate": "2024-01-08"    // 上一周日期
+        },
+        // 月新增用户数据及其环比
+        "monthlyNewUsers": {
+            "currentValue": 150,                    // 当前月新增用户数
+            "previousMonthValue": 120,              // 上一月新增用户数
+            "growthRate": "25.00",                  // 环比增长率
+            "monthDate": "2024-01-15",              // 当前月日期
+            "previousMonthDate": "2023-12-15"       // 上一月日期
+        },
+        // 三日留存率数据及其同比增长
+        "threeDayRetentionRate": {
+            "currentValue": "45.25",            // 当前日期三日留存率
+            "previousYearValue": "42.10",       // 上年同期三日留存率
+            "growthRate": "7.48",               // 同比增长率
+            "days": 3,                          // 留存天数
+            "currentDate": "2024-01-15",        // 当前日期
+            "previousYearDate": "2023-01-15"    // 上年同期日期
+        },
+        // 七日留存率数据及其同比增长
+        "sevenDayRetentionRate": {
+            "currentValue": "65.25",            // 当前日期七日留存率
+            "previousYearValue": "62.10",       // 上年同期七日留存率
+            "growthRate": "5.09",               // 同比增长率
+            "days": 7,                          // 留存天数
+            "currentDate": "2024-01-15",        // 当前日期
+            "previousYearDate": "2023-01-15"    // 上年同期日期
+        },
+        // 十日留存率数据及其同比增长
+        "tenDayRetentionRate": {
+            "currentValue": "75.25",            // 当前日期十日留存率
+            "previousYearValue": "72.10",       // 上年同期十日留存率
+            "growthRate": "4.37",               // 同比增长率
+            "days": 10,                         // 留存天数
+            "currentDate": "2024-01-15",        // 当前日期
+            "previousYearDate": "2023-01-15"    // 上年同期日期
+        },
+        // 七日流失率数据及其同比增长
+        "sevenDayChurnRate": {
+            "currentValue": "5.25",             // 当前日期七日流失率
+            "previousYearValue": "6.10",        // 上年同期七日流失率
+            "growthRate": "-13.93",             // 同比增长率（负值表示改善）
+            "days": 7,                          // 流失观察天数
+            "currentDate": "2024-01-15",        // 当前日期
+            "previousYearDate": "2023-01-15"    // 上年同期日期
+        },
+        // 十日转化率
+        "tenDayConversionRate": "0.6500",       // 十日成交转换率
+        // 十五日转化率
+        "fifteenDayConversionRate": "0.4500",   // 十五日成交转换率
+        // 当月人均成交订单数
+        "currentMonthAvgOrdersPerCustomer": "2.50",     // 当月人均订单数
+        // 当月人均成交销售额
+        "currentMonthAvgSalesPerCustomer": "1250.00",   // 当月人均销售额
+        // 人均订单数增长率
+        "avgOrdersGrowthRate": "13.64",                 // 人均订单数环比增长率
+        // 人均销售额增长率
+        "avgSalesGrowthRate": "13.64",                  // 人均销售额环比增长率
+        // 平均服务时间数据及其同比增长
+        "averageServiceTime": {
+            "currentValue": "2.50",             // 当前平均服务时间（天）
+            "previousYearValue": "3.00",        // 上年同期平均服务时间（天）
+            "growthRate": "-16.67",             // 同比增长率（负值表示改善）
+            "currentDate": "2024-01-15",        // 当前日期
+            "previousYearDate": "2023-01-15"    // 上年同期日期
+        }
+    },
+    "timestamp": 1705123456789  // 响应时间戳
 }
 ```
 
-### 6.3 查询所有客户的服务时间记录
-- **URL**: `GET /api/server-time/all`
-- **描述**: 查询所有客户的服务时间记录
+---
 
-**请求示例**:
-```
-GET /api/server-time/all
-```
+## 7. 常用查询示例
 
-**响应示例**:
-```json
-{
-    "success": true,
-    "message": "查询成功",
-    "recordCount": 150,
-    "serverTimes": [
-        {
-            "colCltID": "CUST001",
-            "colSerTi": 86400,
-            "createTime": "2024-01-01T10:00:00",
-            "updateTime": "2024-01-01T10:00:00"
-        },
-        // ... 更多记录
-    ],
-    "description": "所有客户的服务时间记录"
-}
+### 订单指标查询
 ```
-
-### 监控业务增长
-```
-# 监控日新增用户增长
-curl -X GET "http://localhost:8080/api/strategic/new-users/daily-growth/2024-01-15"
-
-# 监控月度订单指标增长
 curl -X GET "http://localhost:8080/api/order-metrics/monthly-stats/2024-01"
 ```
 
@@ -1114,4 +1058,4 @@ curl -X GET "http://localhost:8080/analyze/address/2024-01-15"
 
 ---
 
-*最后更新时间: 2025-09-22*
+*最后更新时间: 2025-09-25*

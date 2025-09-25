@@ -9,17 +9,13 @@ services:
     image: service-metrics-platform:latest
     container_name: service-metrics-platform
     restart: unless-stopped
+    # 添加端口映射
     ports:
       - "9712:9712"
     environment:
       # Spring配置
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_PORT=9712
-      
-      # 数据库配置
-      - MYSQL_URL=jdbc:mysql://rm-uf6itdd69r9j2b45ato.mysql.rds.aliyuncs.com:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&connectionTimeZone=LOCAL
-      - MYSQL_USERNAME=jcs
-      - MYSQL_PASSWORD=Jueceshu2021
       
       # ClickHouse配置
       - CLICKHOUSE_URL=jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION
@@ -35,9 +31,6 @@ services:
       - ./logs:/app/logs
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    # depends_on:  # 注释掉依赖，因为使用外部数据库
-      # - mysql
-      # - clickhouse
     networks:
       - service-metrics-network
     healthcheck:
@@ -55,6 +48,7 @@ services:
     image: service-metrics-platform:fast
     container_name: service-metrics-platform-fast
     restart: unless-stopped
+    # 添加端口映射
     ports:
       - "9713:9712"
     environment:
@@ -90,70 +84,16 @@ services:
       retries: 3
       start_period: 60s
 
-  # MySQL数据库 (注释掉，因为使用外部RDS)
-  # mysql:
-  #   image: mysql:8.0
-  #   container_name: service-metrics-mysql
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3306:3306"
-  #   environment:
-  #     - MYSQL_ROOT_PASSWORD=root_password
-  #     - MYSQL_DATABASE=service_metrics
-  #     - MYSQL_USER=service_user
-  #     - MYSQL_PASSWORD=service_password
-  #     - TZ=Asia/Shanghai
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-  #     - ./sql:/docker-entrypoint-initdb.d
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #   command: --default-authentication-plugin=mysql_native_password
-  #   networks:
-  #     - service-metrics-network
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-
-  # ClickHouse数据库 (注释掉，因为使用外部ClickHouse)
-  # clickhouse:
-  #   image: clickhouse/clickhouse-server:latest
-  #   container_name: service-metrics-clickhouse
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8123:8123"
-  #     - "9000:9000"
-  #   environment:
-  #     - CLICKHOUSE_DB=default
-  #     - CLICKHOUSE_USER=default
-  #     - CLICKHOUSE_PASSWORD=clickhouse_password
-  #   volumes:
-  #     - clickhouse_data:/var/lib/clickhouse
-  #     - clickhouse_logs:/var/log/clickhouse-server
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #   networks:
-  #     - service-metrics-network
-  #   healthcheck:
-  #     test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-
-  # Nginx反向代理（可选）
+  # Nginx反向代理
 #  nginx:
 #    image: nginx:alpine
 #    container_name: service-metrics-nginx
 #    restart: unless-stopped
 #    ports:
-#      - "80:80"
-#      - "443:443"
+#      # 使用8080端口避免冲突
+#      - "8080:80"
 #    volumes:
-#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 #      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-#      - ./nginx/ssl:/etc/nginx/ssl:ro
 #      - nginx_logs:/var/log/nginx
 #    depends_on:
 #      - service-metrics-platform
@@ -161,12 +101,6 @@ services:
 #      - service-metrics-network
 
 volumes:
-  # mysql_data:  # 注释掉，因为使用外部MySQL
-  #   driver: local
-  # clickhouse_data:  # 注释掉，因为使用外部ClickHouse
-  #   driver: local
-  # clickhouse_logs:
-  #   driver: local
   nginx_logs:
     driver: local
 
