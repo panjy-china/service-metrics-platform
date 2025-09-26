@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 微信消息地址分析结果数据访问接口
@@ -104,4 +105,16 @@ public interface WechatMessageAnalyzeAddressMapper {
      * @return 用户地址列表
      */
     List<String> getUserLatestAddresses();
+    
+    /**
+     * 获取所有处理后的地址
+     * @return 处理后的地址列表
+     */
+    List<String> getAllProcessedAddresses();
+    
+    /**
+     * 获取所有处理后的地址及其对应的微信ID
+     * @return 包含微信ID和处理后地址的映射列表
+     */
+    List<Map<String, String>> getAllProcessedAddressWithWechatId();
 }

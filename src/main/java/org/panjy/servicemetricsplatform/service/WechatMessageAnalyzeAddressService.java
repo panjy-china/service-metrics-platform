@@ -19,6 +19,9 @@ public class WechatMessageAnalyzeAddressService {
     @Autowired
     private WechatMessageAnalyzeAddressMapper addressMapper;
     
+    @Autowired
+    private AddressValidationService addressValidationService;
+    
     /**
      * 完整执行方法：保存单条地址分析结果
      * @param record 地址分析结果
@@ -424,6 +427,233 @@ public class WechatMessageAnalyzeAddressService {
     }
     
     /**
+     * 验证指定微信ID的地址是否合法（详细版本）
+     * @param wechatId 微信ID
+     * @return 详细的地址验证结果
+     */
+    public DetailedAddressValidationResult validateAddressByWechatIdDetailed(String wechatId) {
+        try {
+            List<WechatMessageAnalyzeAddress> records = findByWechatId(wechatId);
+            if (records.isEmpty()) {
+                return new DetailedAddressValidationResult(null, false, "未找到该微信ID的地址记录");
+            }
+            
+            // 获取最新的地址记录
+            WechatMessageAnalyzeAddress latestRecord = records.get(0);
+            String address = latestRecord.getAddress();
+            
+            // 使用AddressValidationService进行详细验证
+            boolean isValid = addressValidationService.isValidAddress(address);
+            
+            // 如果不合法，提供具体的验证失败原因
+            String validationMessage = "";
+            if (!isValid) {
+                validationMessage = getValidationFailureReason(address);
+            }
+            
+            return new DetailedAddressValidationResult(address, isValid, validationMessage);
+        } catch (Exception e) {
+            System.err.println("验证指定微信ID的地址是否合法时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return new DetailedAddressValidationResult(null, false, "验证过程中发生错误: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取地址验证失败的具体原因
+     * @param address 地址
+     * @return 验证失败原因
+     */
+    private String getValidationFailureReason(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            return "地址为空";
+        }
+        
+        String trimmedAddress = address.trim();
+        
+        if (trimmedAddress.length() < 3) {
+            return "地址长度过短";
+        }
+        
+        if (trimmedAddress.matches("^\\d+$")) {
+            return "地址只包含数字";
+        }
+        
+        if (trimmedAddress.matches(".*[!@#$%^&*()_+=\\[\\]{}|\\\\:\";'<>?,./`~].*")) {
+            return "地址包含非法字符";
+        }
+        
+        if (!trimmedAddress.matches(".*[省市县区镇村街道路街巷弄号].*")) {
+            return "地址缺少地址关键字";
+        }
+        
+        boolean containsProvinceOrCity = false;
+        for (String provinceOrCity : java.util.Arrays.asList(
+                "北京市", "天津市", "上海市", "重庆市", "河北省", "山西省", "辽宁省", "吉林省", "黑龙江省",
+                "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省", "湖北省", "湖南省",
+                "广东省", "海南省", "四川省", "贵州省", "云南省", "陕西省", "甘肃省", "青海省", "台湾省",
+                "内蒙古自治区", "广西壮族自治区", "西藏自治区", "宁夏回族自治区", "新疆维吾尔自治区",
+                "香港特别行政区", "澳门特别行政区")) {
+            if (trimmedAddress.contains(provinceOrCity)) {
+                containsProvinceOrCity = true;
+                break;
+            }
+        }
+        
+        if (!containsProvinceOrCity && !trimmedAddress.contains("省") && !trimmedAddress.contains("市")) {
+            return "地址缺少省份或城市信息";
+        }
+        
+        if (!trimmedAddress.contains(",") && !trimmedAddress.contains("，") && 
+            !trimmedAddress.contains(" ") && trimmedAddress.length() < 10) {
+            return "地址格式可能不完整";
+        }
+        
+        return "地址验证未通过";
+    }
+    
+    /**
+     * 验证指定微信ID的地址是否合法
+     * @param wechatId 微信ID
+     * @return 地址验证结果
+     */
+    public AddressValidationResult validateAddressByWechatId(String wechatId) {
+        try {
+            List<WechatMessageAnalyzeAddress> records = findByWechatId(wechatId);
+            if (records.isEmpty()) {
+                return new AddressValidationResult(null, false);
+            }
+            
+            // 获取最新的地址记录
+            WechatMessageAnalyzeAddress latestRecord = records.get(0);
+            String address = latestRecord.getAddress();
+            
+            boolean isValid = addressValidationService.isValidAddress(address);
+            return new AddressValidationResult(address, isValid);
+        } catch (Exception e) {
+            System.err.println("验证指定微信ID的地址是否合法时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return new AddressValidationResult(null, false);
+        }
+    }
+    
+    /**
+     * 验证所有地址是否合法
+     * @return 地址验证结果列表
+     */
+    public List<AddressValidationService.AddressValidationResult> validateAllAddresses() {
+        try {
+            return addressValidationService.validateAllProcessedAddresses();
+        } catch (Exception e) {
+            System.err.println("验证所有地址是否合法时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * 按时间范围查询地址分析结果并验证地址合法性，返回所有合法的对象
+     * @param startTime 开始时间戳（毫秒）
+     * @param endTime 结束时间戳（毫秒）
+     * @return 合法的地址分析结果列表
+     */
+    public List<WechatMessageAnalyzeAddress> findValidAddressesByTimeRange(Long startTime, Long endTime) {
+        // 1. 参数验证
+        if (startTime == null || endTime == null) {
+            System.err.println("查询参数开始时间和结束时间不能为空");
+            return new ArrayList<>();
+        }
+        
+        if (startTime > endTime) {
+            System.err.println("开始时间不能大于结束时间");
+            return new ArrayList<>();
+        }
+        
+        try {
+            // 2. 根据时间范围查询地址分析结果
+            List<WechatMessageAnalyzeAddress> results = findByTimeRange(startTime, endTime);
+            
+            // 3. 如果查询结果为空，直接返回空列表
+            if (results == null || results.isEmpty()) {
+                System.out.println("在指定时间范围内未找到任何地址分析结果");
+                return new ArrayList<>();
+            }
+            
+            // 4. 过滤出地址合法的对象
+            List<WechatMessageAnalyzeAddress> validAddresses = new ArrayList<>();
+            
+            for (WechatMessageAnalyzeAddress record : results) {
+                // 检查地址是否合法
+                if (record.getAddress() != null && addressValidationService.isValidAddress(record.getAddress())) {
+                    validAddresses.add(record);
+                }
+            }
+            
+            System.out.println("时间范围查询完成，总记录数: " + results.size() + "，合法地址数: " + validAddresses.size());
+            
+            return validAddresses;
+        } catch (Exception e) {
+            System.err.println("按时间范围查询并验证地址合法性时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * 按微信ID和时间范围查询地址分析结果并验证地址合法性，返回所有合法的对象
+     * @param wechatId 微信ID
+     * @param startTime 开始时间戳（毫秒）
+     * @param endTime 结束时间戳（毫秒）
+     * @return 合法的地址分析结果列表
+     */
+    public List<WechatMessageAnalyzeAddress> findValidAddressesByWechatIdAndTimeRange(String wechatId, Long startTime, Long endTime) {
+        // 1. 参数验证
+        if (wechatId == null || wechatId.trim().isEmpty()) {
+            System.err.println("查询参数微信ID不能为空");
+            return new ArrayList<>();
+        }
+        
+        if (startTime == null || endTime == null) {
+            System.err.println("查询参数开始时间和结束时间不能为空");
+            return new ArrayList<>();
+        }
+        
+        if (startTime > endTime) {
+            System.err.println("开始时间不能大于结束时间");
+            return new ArrayList<>();
+        }
+        
+        try {
+            // 2. 根据微信ID和时间范围查询地址分析结果
+            List<WechatMessageAnalyzeAddress> results = findByWechatIdAndTimeRange(wechatId.trim(), startTime, endTime);
+            
+            // 3. 如果查询结果为空，直接返回空列表
+            if (results == null || results.isEmpty()) {
+                System.out.println("在指定微信ID和时间范围内未找到任何地址分析结果");
+                return new ArrayList<>();
+            }
+            
+            // 4. 过滤出地址合法的对象
+            List<WechatMessageAnalyzeAddress> validAddresses = new ArrayList<>();
+            
+            for (WechatMessageAnalyzeAddress record : results) {
+                // 检查地址是否合法
+                if (record.getAddress() != null && addressValidationService.isValidAddress(record.getAddress())) {
+                    validAddresses.add(record);
+                }
+            }
+            
+            System.out.println("微信ID和时间范围查询完成，总记录数: " + results.size() + "，合法地址数: " + validAddresses.size());
+            
+            return validAddresses;
+        } catch (Exception e) {
+            System.err.println("按微信ID和时间范围查询并验证地址合法性时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
      * 执行结果封装类
      */
     public static class ExecuteResult {
@@ -484,6 +714,91 @@ public class WechatMessageAnalyzeAddressService {
                     ", message='" + message + '\'' +
                     ", errorCode='" + errorCode + '\'' +
                     ", data=" + data +
+                    '}';
+        }
+    }
+    
+    /**
+     * 地址验证结果封装类
+     */
+    public static class AddressValidationResult {
+        private String address;
+        private boolean valid;
+        
+        public AddressValidationResult(String address, boolean valid) {
+            this.address = address;
+            this.valid = valid;
+        }
+        
+        public String getAddress() {
+            return address;
+        }
+        
+        public void setAddress(String address) {
+            this.address = address;
+        }
+        
+        public boolean isValid() {
+            return valid;
+        }
+        
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+        
+        @Override
+        public String toString() {
+            return "AddressValidationResult{" +
+                    "address='" + address + '\'' +
+                    ", valid=" + valid +
+                    '}';
+        }
+    }
+    
+    /**
+     * 详细地址验证结果封装类
+     */
+    public static class DetailedAddressValidationResult {
+        private String address;
+        private boolean valid;
+        private String validationMessage;
+        
+        public DetailedAddressValidationResult(String address, boolean valid, String validationMessage) {
+            this.address = address;
+            this.valid = valid;
+            this.validationMessage = validationMessage;
+        }
+        
+        public String getAddress() {
+            return address;
+        }
+        
+        public void setAddress(String address) {
+            this.address = address;
+        }
+        
+        public boolean isValid() {
+            return valid;
+        }
+        
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+        
+        public String getValidationMessage() {
+            return validationMessage;
+        }
+        
+        public void setValidationMessage(String validationMessage) {
+            this.validationMessage = validationMessage;
+        }
+        
+        @Override
+        public String toString() {
+            return "DetailedAddressValidationResult{" +
+                    "address='" + address + '\'' +
+                    ", valid=" + valid +
+                    ", validationMessage='" + validationMessage + '\'' +
                     '}';
         }
     }

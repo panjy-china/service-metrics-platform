@@ -15,6 +15,7 @@
         bind_mobile, create_time, current_device_id, is_deleted, delete_time,
         group_id, memo, wechat_version, last_update_time
     </sql>
+    
     <!-- 查询所有微信账号 -->
     <select id="selectAll" resultType="org.panjy.servicemetricsplatform.entity.WechatAccount">
         SELECT <include refid="Base_Column_List"/>
@@ -26,5 +27,21 @@
     <select id="selectAllWechatIds" resultType="java.lang.String">
         SELECT wechat_id FROM wechat_account
     </select>
+    
+    <!-- 根据微信ID查询微信账号 -->
+    <select id="selectByWechatId" parameterType="string" resultType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+        SELECT <include refid="Base_Column_List"/>
+        FROM wechat_account
+        WHERE wechat_id = #{wechatId}
+    </select>
+    
+    <!-- 根据微信ID更新微信账号 -->
+    <update id="updateByWechatId" parameterType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+        UPDATE wechat_account
+        SET 
+            memo = #{memo},
+            last_update_time = NOW()
+        WHERE wechat_id = #{wechatId}
+    </update>
 
 </mapper>

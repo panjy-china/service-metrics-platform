@@ -1,16 +1,86 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMemberMapper">
-<!-- 查询非职员用户 -->
-    <select id="findAllUser" resultType="java.lang.String">
-        SELECT m.wechat_id
-        FROM wechat_member m
-        LEFT JOIN wechat_account a
-            ON m.wechat_id = a.wechat_id
-        WHERE a.wechat_id IS NULL
-#         LIMIT 20
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.WechatMember">
+        <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
+        <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        wechat_id, colCltID
+    </sql>
+    
+    <!-- 插入单条记录 -->
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.WechatMember">
+        INSERT INTO tbl_wechat_member (
+            wechat_id, colCltID
+        ) VALUES (
+            #{wechatId,jdbcType=VARCHAR}, 
+            #{colCltID,jdbcType=VARCHAR}
+        )
+    </insert>
+    
+    <!-- 批量插入记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO tbl_wechat_member (
+            wechat_id, colCltID
+        ) VALUES
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.wechatId,jdbcType=VARCHAR}, 
+                #{record.colCltID,jdbcType=VARCHAR}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 根据微信ID查询记录 -->
+    <select id="selectByWechatId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM tbl_wechat_member
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+        LIMIT 1
     </select>
+    
+    <!-- 根据客户ID查询记录 -->
+    <select id="selectByColCltID" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM tbl_wechat_member
+        WHERE colCltID = #{colCltID,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 查询所有记录 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM tbl_wechat_member
+    </select>
+    
+    <!-- 根据微信ID更新记录 -->
+    <update id="updateByWechatId" parameterType="org.panjy.servicemetricsplatform.entity.WechatMember">
+        UPDATE tbl_wechat_member
+        SET 
+            colCltID = #{colCltID,jdbcType=VARCHAR}
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+    </update>
+    
+    <!-- 根据微信ID删除记录 -->
+    <delete id="deleteByWechatId">
+        DELETE FROM tbl_wechat_member
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+    </delete>
+    
+    <!-- 检查记录是否已存在 -->
+    <select id="countByWechatId" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM tbl_wechat_member
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+    </select>
+    
 </mapper>

@@ -68,10 +68,12 @@
     <!-- Get total sales amount for specified time period -->
     <select id="getTotalSalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
-        FROM aikang.tbl_Order
-        WHERE colOdrTim &gt;= #{startTime}
-        AND colOdrTim &lt;= #{endTime}
-        AND colTotal &gt; 0
+        FROM aikang.tbl_Order o
+                 JOIN aikang.tbl_server_account sa
+                      ON o.colEmpID = sa.account_code
+        WHERE o.colOdrTim >= #{startTime}
+          AND o.colOdrTim &lt;= #{endTime}
+          AND o.colTotal > 0
     </select>
 
     <!-- Get total customer count for specified time period -->
@@ -85,11 +87,13 @@
 
     <!-- Get total order count for specified time period -->
     <select id="getTotalOrderCount" resultType="java.lang.Long">
-        SELECT COUNT(*) as orderCount
-        FROM aikang.tbl_Order
-        WHERE colOdrTim &gt;= #{startTime}
-        AND colOdrTim &lt;= #{endTime}
-        AND colTotal &gt; 0
+        SELECT COUNT(*) AS orderCount
+        FROM aikang.tbl_Order o
+                 JOIN aikang.tbl_server_account sa
+                      ON o.colEmpID = sa.account_code
+        WHERE o.colOdrTim <![CDATA[ >= ]]> #{startTime}
+          AND o.colOdrTim <![CDATA[ <= ]]> #{endTime}
+          AND o.colTotal > 0
     </select>
     
     <!-- Get earliest order time for specified client -->
@@ -135,6 +139,14 @@
             GROUP BY colCltID
         ) t
         WHERE firstOrderTime &gt;= #{date}
+    </select>
+    
+    <!-- 根据处理后的地址串进行模糊查询，返回匹配到的第一条记录的客户ID -->
+    <select id="getCltIdByProcessedAddress" resultType="java.lang.String">
+        SELECT colCltID
+        FROM aikang.tbl_Order
+        WHERE colAddress LIKE CONCAT('%', #{processedAddress}, '%')
+        LIMIT 1
     </select>
 
 </mapper>

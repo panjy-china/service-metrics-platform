@@ -80,4 +80,11 @@ public interface OrderMapper {
      * @return 在指定日期之后首次下单的用户ID列表
      */
     List<String> getNewClientIdsAfterDate(@Param("date") LocalDateTime date);
+    
+    /**
+     * 根据处理后的地址串进行模糊查询，返回匹配到的第一条记录的客户ID
+     * @param processedAddress 处理后的地址串
+     * @return 匹配到的第一条记录的客户ID
+     */
+    String getCltIdByProcessedAddress(@Param("processedAddress") String processedAddress);
 }

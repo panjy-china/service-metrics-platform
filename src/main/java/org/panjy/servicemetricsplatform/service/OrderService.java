@@ -44,6 +44,27 @@ public class OrderService {
     private ServerTimeMapper serverTimeMapper;
     
     /**
+     * 根据处理后的地址串进行模糊查询，返回匹配到的第一条记录的客户ID
+     * 
+     * @param processedAddress 处理后的地址串
+     * @return 匹配到的第一条记录的客户ID，如果未找到则返回null
+     */
+    public String getCltIdByProcessedAddress(String processedAddress) {
+        try {
+            logger.info("开始根据处理后的地址串进行模糊查询，地址串: {}", processedAddress);
+            
+            String cltId = orderMapper.getCltIdByProcessedAddress(processedAddress);
+            
+            logger.info("地址串模糊查询完成，地址串: {}, 查询结果: {}", processedAddress, cltId);
+            
+            return cltId;
+        } catch (Exception e) {
+            logger.error("根据处理后的地址串进行模糊查询失败，地址串: {}", processedAddress, e);
+            return null;
+        }
+    }
+    
+    /**
      * 计算指定月份人均成交订单数
      * 人均订单数 = 指定月份总订单数 / ACCOUNT_NUMBER常量
      * 

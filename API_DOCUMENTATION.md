@@ -14,7 +14,7 @@ Service Metrics Platform 是一个服务指标分析平台，提供微信相关�
 ## 通用响应格式
 
 ### 成功响应格式
-``json
+```json
 {
     "success": true,
     "message": "操作成功",
@@ -24,7 +24,7 @@ Service Metrics Platform 是一个服务指标分析平台，提供微信相关�
 ```
 
 ### 错误响应格式
-``json
+```json
 {
     "success": false,
     "message": "错误描述",
@@ -330,7 +330,7 @@ GET /api/strategic/new-users/daily-growth/2024-01-15
 ```
 
 **响应示例**:
-``json
+```json
 {
     "success": true,
     "message": "查询成功",
@@ -445,7 +445,7 @@ GET /api/strategic/churn-rate/2024-01-15
 ```
 
 **响应示例**:
-``json
+```json
 {
     "success": true,
     "message": "计算成功",
@@ -472,7 +472,7 @@ GET /api/strategic/average-service-time-growth/2024-01-15
 ```
 
 **响应示例**:
-``json
+```json
 {
     "success": true,
     "message": "计算成功",
@@ -708,7 +708,7 @@ GET /api/order-metrics/monthly-stats/2024-01
 ```
 
 **响应示例**:
-``json
+```json
 {
     "success": true,
     "message": "查询成功",
@@ -892,137 +892,123 @@ GET /api/comprehensive/metrics/2024-01-15
 ```
 
 **响应示例**:
-```
+```json
 {
     "success": true,
     "message": "查询成功",
     "data": {
-        // 客户性别分布数据
         "genderDistribution": [
             {
-                "gender": "男",     // 性别
-                "count": 120        // 对应人数
+                "gender": "男",
+                "count": 120
             },
             {
-                "gender": "女",     // 性别
-                "count": 105        // 对应人数
+                "gender": "女",
+                "count": 105
             }
         ],
-        // 客户年龄分布数据
         "ageDistribution": [
             {
-                "ageGroup": "18-24岁",  // 年龄段
-                "count": 45             // 对应人数
+                "ageGroup": "18-24岁",
+                "count": 45
             },
             {
-                "ageGroup": "25-34岁",  // 年龄段
-                "count": 75             // 对应人数
+                "ageGroup": "25-34岁",
+                "count": 75
             }
         ],
-        // 客户体重分布数据
         "weightDistribution": [
             {
-                "weightGroup": "50-60kg",   // 体重范围
-                "count": 35                 // 对应人数
+                "weightGroup": "50-60kg",
+                "count": 35
             },
             {
-                "weightGroup": "60-70kg",   // 体重范围
-                "count": 50                 // 对应人数
+                "weightGroup": "60-70kg",
+                "count": 50
             }
         ],
-        // 客户地区分布数据
         "regionDistribution": [
             {
-                "province": "北京",     // 省份
-                "count": 128            // 对应人数
+                "province": "北京",
+                "count": 128
             },
             {
-                "province": "上海",     // 省份
-                "count": 95             // 对应人数
+                "province": "上海",
+                "count": 95
             }
         ],
-        // 日新增用户数据及其环比
         "dailyNewUsers": {
-            "currentValue": 10,             // 当前日期新增用户数
-            "previousDayValue": 8,          // 前一日新增用户数
-            "growthRate": "25.00",          // 环比增长率
-            "date": "2024-01-15",           // 当前日期
-            "previousDayDate": "2024-01-14" // 前一日日期
+            "currentValue": 10,
+            "previousDayValue": 8,
+            "growthRate": "25.00",
+            "date": "2024-01-15",
+            "previousDayDate": "2024-01-14"
         },
-        // 周新增用户数据及其环比
         "weeklyNewUsers": {
-            "currentValue": 50,                 // 当前周新增用户数
-            "previousWeekValue": 45,            // 上一周新增用户数
-            "growthRate": "11.11",              // 环比增长率
-            "weekDate": "2024-01-15",           // 当前周日期
-            "previousWeekDate": "2024-01-08"    // 上一周日期
+            "currentValue": 50,
+            "previousWeekValue": 45,
+            "growthRate": "11.11",
+            "weekDate": "2024-01-15",
+            "previousWeekDate": "2024-01-08"
         },
-        // 月新增用户数据及其环比
         "monthlyNewUsers": {
-            "currentValue": 150,                    // 当前月新增用户数
-            "previousMonthValue": 120,              // 上一月新增用户数
-            "growthRate": "25.00",                  // 环比增长率
-            "monthDate": "2024-01-15",              // 当前月日期
-            "previousMonthDate": "2023-12-15"       // 上一月日期
+            "currentValue": 150,
+            "previousMonthValue": 120,
+            "growthRate": "25.00",
+            "monthDate": "2024-01-15",
+            "previousMonthDate": "2023-12-15"
         },
-        // 三日留存率数据及其同比增长
         "threeDayRetentionRate": {
-            "currentValue": "45.25",            // 当前日期三日留存率
-            "previousYearValue": "42.10",       // 上年同期三日留存率
-            "growthRate": "7.48",               // 同比增长率
-            "days": 3,                          // 留存天数
-            "currentDate": "2024-01-15",        // 当前日期
-            "previousYearDate": "2023-01-15"    // 上年同期日期
+            "currentValue": "45.25",
+            "previousYearValue": "42.10",
+            "growthRate": "7.48",
+            "days": 3,
+            "currentDate": "2024-01-15",
+            "previousYearDate": "2023-01-15"
         },
-        // 七日留存率数据及其同比增长
         "sevenDayRetentionRate": {
-            "currentValue": "65.25",            // 当前日期七日留存率
-            "previousYearValue": "62.10",       // 上年同期七日留存率
-            "growthRate": "5.09",               // 同比增长率
-            "days": 7,                          // 留存天数
-            "currentDate": "2024-01-15",        // 当前日期
-            "previousYearDate": "2023-01-15"    // 上年同期日期
+            "currentValue": "65.25",
+            "previousYearValue": "62.10",
+            "growthRate": "5.09",
+            "days": 7,
+            "currentDate": "2024-01-15",
+            "previousYearDate": "2023-01-15"
         },
-        // 十日留存率数据及其同比增长
         "tenDayRetentionRate": {
-            "currentValue": "75.25",            // 当前日期十日留存率
-            "previousYearValue": "72.10",       // 上年同期十日留存率
-            "growthRate": "4.37",               // 同比增长率
-            "days": 10,                         // 留存天数
-            "currentDate": "2024-01-15",        // 当前日期
-            "previousYearDate": "2023-01-15"    // 上年同期日期
+            "currentValue": "75.25",
+            "previousYearValue": "72.10",
+            "growthRate": "4.37",
+            "days": 10,
+            "currentDate": "2024-01-15",
+            "previousYearDate": "2023-01-15"
         },
-        // 七日流失率数据及其同比增长
         "sevenDayChurnRate": {
-            "currentValue": "5.25",             // 当前日期七日流失率
-            "previousYearValue": "6.10",        // 上年同期七日流失率
-            "growthRate": "-13.93",             // 同比增长率（负值表示改善）
-            "days": 7,                          // 流失观察天数
-            "currentDate": "2024-01-15",        // 当前日期
-            "previousYearDate": "2023-01-15"    // 上年同期日期
+            "currentValue": "5.25",
+            "previousYearValue": "6.10",
+            "growthRate": "-13.93",
+            "days": 7,
+            "currentDate": "2024-01-15",
+            "previousYearDate": "2023-01-15"
         },
-        // 十日转化率
-        "tenDayConversionRate": "0.6500",       // 十日成交转换率
-        // 十五日转化率
-        "fifteenDayConversionRate": "0.4500",   // 十五日成交转换率
-        // 当月人均成交订单数
-        "currentMonthAvgOrdersPerCustomer": "2.50",     // 当月人均订单数
-        // 当月人均成交销售额
-        "currentMonthAvgSalesPerCustomer": "1250.00",   // 当月人均销售额
-        // 人均订单数增长率
-        "avgOrdersGrowthRate": "13.64",                 // 人均订单数环比增长率
-        // 人均销售额增长率
-        "avgSalesGrowthRate": "13.64",                  // 人均销售额环比增长率
-        // 平均服务时间数据及其同比增长
+        "tenDayConversionRate": "0.6500",
+        "fifteenDayConversionRate": "0.4500",
+        "currentMonthAvgOrdersPerCustomer": "2.50",
+        "currentMonthAvgSalesPerCustomer": "1250.00",
+        "avgOrdersGrowthRate": "13.64",
+        "avgSalesGrowthRate": "13.64",
         "averageServiceTime": {
-            "currentValue": "2.50",             // 当前平均服务时间（天）
-            "previousYearValue": "3.00",        // 上年同期平均服务时间（天）
-            "growthRate": "-16.67",             // 同比增长率（负值表示改善）
-            "currentDate": "2024-01-15",        // 当前日期
-            "previousYearDate": "2023-01-15"    // 上年同期日期
+            "currentValue": "2.50",
+            "previousYearValue": "3.00",
+            "growthRate": "-16.67",
+            "currentDate": "2024-01-15",
+            "previousYearDate": "2023-01-15"
+        },
+        // 平均成交时间
+        "averageDealTime": {
+            "currentValue": "15.50"
         }
     },
-    "timestamp": 1705123456789  // 响应时间戳
+    "timestamp": 1705123456789
 }
 ```
 

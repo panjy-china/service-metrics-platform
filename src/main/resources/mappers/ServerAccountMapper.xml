@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.ServerAccountMapper">
+
+    <!-- ServerAccount结果映射 -->
+    <resultMap id="ServerAccountResultMap" type="org.panjy.servicemetricsplatform.entity.ServerAccount">
+        <result column="id" property="id"/>
+        <result column="account_code" property="accountCode"/>
+    </resultMap>
+
+    <!-- 批量插入服务器账户记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO aikang.tbl_server_account (
+            id, account_code
+        ) VALUES
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.id},
+                #{record.accountCode}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 批量查询所有服务器账户记录 -->
+    <select id="batchSelectAll" resultMap="ServerAccountResultMap">
+        SELECT 
+            id,
+            account_code
+        FROM aikang.tbl_server_account
+    </select>
+
+</mapper>

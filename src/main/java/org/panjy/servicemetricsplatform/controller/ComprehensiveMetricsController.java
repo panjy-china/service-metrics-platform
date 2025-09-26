@@ -216,24 +216,42 @@ public class ComprehensiveMetricsController {
         try {
             System.out.println("开始获取留存率数据");
             
+            // 创建日历实例用于日期计算
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            cal.add(Calendar.DATE, -17);
+            Date agoDate = cal.getTime();
+            
             // 三日留存率及同比增长 - 获取指定日期的三日用户留存率及其与上年同期的增长率
-            Map<String, Object> threeDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(date, 3);
+            // 将日期减去3天
+//            cal.setTime(date);
+//            cal.add(Calendar.DAY_OF_MONTH, -3 - 10);
+//            Date threeDayDate = cal.getTime();
+            Map<String, Object> threeDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(agoDate, 3);
             data.put("threeDayRetentionRate", threeDayRetention);
             
             // 七日留存率及同比增长 - 获取指定日期的七日用户留存率及其与上年同期的增长率
-            Map<String, Object> sevenDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(date, 7);
+            // 将日期减去7天
+//            cal.setTime(date);
+//            cal.add(Calendar.DAY_OF_MONTH, -7 - 10);
+//            Date sevenDayDate = cal.getTime();
+            Map<String, Object> sevenDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(agoDate, 7);
             data.put("sevenDayRetentionRate", sevenDayRetention);
             
             // 十日留存率及同比增长 - 获取指定日期的十日用户留存率及其与上年同期的增长率
-            Map<String, Object> tenDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(date, 10);
+            // 将日期减去10天
+//            cal.setTime(date);
+//            cal.add(Calendar.DAY_OF_MONTH, -10 - );
+//            Date tenDayDate = cal.getTime();
+            Map<String, Object> tenDayRetention = strategicLayerService.calculateRetentionRateWithGrowth(agoDate, 10);
             data.put("tenDayRetentionRate", tenDayRetention);
             
             System.out.println("留存率数据获取完成");
         } catch (Exception e) {
             System.err.println("获取留存率数据失败: " + e.getMessage());
-            data.put("threeDayRetentionRate", new HashMap<>());
-            data.put("sevenDayRetentionRate", new HashMap<>());
-            data.put("tenDayRetentionRate", new HashMap<>());
+            data.put("3", new HashMap<>());
+            data.put("7", new HashMap<>());
+            data.put("10", new HashMap<>());
         }
     }
     
@@ -353,10 +371,21 @@ public class ComprehensiveMetricsController {
             Map<String, Object> serviceTimeGrowth = strategicLayerService.calculateAverageServiceTimeWithGrowth(date);
             data.put("averageServiceTime", serviceTimeGrowth);
             
+            // 平均成交时间 - 获取所有客户的平均成交时间（基于订单数据）
+            Double averageDealTime = orderService.calculateAverageServiceTime();
+            Map<String, Object> dealTimeData = new HashMap<>();
+            if (averageDealTime != null) {
+                dealTimeData.put("currentValue", BigDecimal.valueOf(averageDealTime).setScale(2, java.math.RoundingMode.HALF_UP));
+            } else {
+                dealTimeData.put("currentValue", BigDecimal.ZERO);
+            }
+            data.put("averageDealTime", dealTimeData);
+            
             System.out.println("服务时间数据获取完成");
         } catch (Exception e) {
             System.err.println("获取服务时间数据失败: " + e.getMessage());
             data.put("averageServiceTime", new HashMap<>());
+            data.put("averageDealTime", new HashMap<>());
         }
     }
     

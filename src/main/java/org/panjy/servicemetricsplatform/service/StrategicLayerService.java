@@ -701,7 +701,7 @@ public class StrategicLayerService {
             // 2. 计算上年同期日期
             Calendar cal = Calendar.getInstance();
             cal.setTime(currentDate);
-            cal.add(Calendar.YEAR, -1);
+            cal.add(Calendar.DAY_OF_MONTH, -1);
             Date previousYearDate = cal.getTime();
             
             // 3. 获取上年同期留存率

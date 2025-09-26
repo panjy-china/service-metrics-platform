@@ -306,3 +306,7 @@ CREATE TABLE IF NOT EXISTS aikang.wechat_messages_a
     ORDER BY (wechat_account_id, wechat_friend_id, create_time)
     SETTINGS index_granularity = 8192
     COMMENT '存储A销售私聊聊天消息的表';
+
+-- 说明：我们使用现有的 wechat_account 表来存储用户与微信账户的映射关系
+-- 通过更新 wechat_account 表中的 memo 字段来存储用户ID信息
+-- 格式：UserID: {用户ID}; 其他备注信息

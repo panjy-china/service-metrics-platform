@@ -10,7 +10,7 @@
         <result column="msg_type" jdbcType="INTEGER" property="msgType" />
         <result column="wechat_time" jdbcType="BIGINT" property="wechatTime" />
         <result column="content" jdbcType="LONGVARCHAR" property="content" />
-        <result column="address" jdbcType="LONGVARCHAR" property="address" />
+        <result column="address" jdbcType="LONGVARCHAR" property="address" typeHandler="org.panjy.servicemetricsplatform.util.AddressTypeHandler" />
     </resultMap>
     
     <!-- 基础字段列表 -->
@@ -27,7 +27,7 @@
             #{msgType,jdbcType=INTEGER}, 
             #{wechatTime,jdbcType=BIGINT}, 
             #{content,jdbcType=LONGVARCHAR}, 
-            #{address,jdbcType=LONGVARCHAR}
+            #{address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
         )
     </insert>
     
@@ -42,7 +42,7 @@
                 #{record.msgType,jdbcType=INTEGER}, 
                 #{record.wechatTime,jdbcType=BIGINT}, 
                 #{record.content,jdbcType=LONGVARCHAR}, 
-                #{record.address,jdbcType=LONGVARCHAR}
+                #{record.address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
             )
         </foreach>
     </insert>
@@ -75,6 +75,18 @@
         ORDER BY wechat_time DESC
     </select>
     
+    <!-- 联表查询：获取wechat_member和wechat_message_a_analyze_address中同时存在的wxid与处理后的地址 -->
+    <select id="selectCommonWxidWithProcessedAddress" resultType="java.util.Map">
+        SELECT 
+            wm.wechat_id as wechatId,
+            wmaa.address as processedAddress
+        FROM aikang.wechat_member wm
+        INNER JOIN aikang.wechat_message_a_analyze_address wmaa 
+            ON wm.wechat_id = wmaa.wechat_id
+        WHERE wmaa.address IS NOT NULL 
+            AND wmaa.address != ''
+    </select>
+    
     <!-- 根据微信ID和时间范围查询记录 -->
     <select id="selectByWechatIdAndTimeRange" resultMap="BaseResultMap">
         SELECT 
@@ -91,7 +103,7 @@
         SET 
             msg_type = #{msgType,jdbcType=INTEGER},
             content = #{content,jdbcType=LONGVARCHAR},
-            address = #{address,jdbcType=LONGVARCHAR}
+            address = #{address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
         WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
           AND wechat_time = #{wechatTime,jdbcType=BIGINT}
     </update>
@@ -140,6 +152,20 @@
                  ) t
             WHERE t.max_address NOT LIKE '%北京%大兴%';
         ]]>
+    </select>
+    
+    <!-- 获取所有处理后的地址 -->
+    <select id="getAllProcessedAddresses" resultType="java.lang.String">
+        SELECT DISTINCT address
+        FROM wechat_message_a_analyze_address
+        WHERE address IS NOT NULL AND address != ''
+    </select>
+    
+    <!-- 获取所有处理后的地址及其对应的微信ID -->
+    <select id="getAllProcessedAddressWithWechatId" resultType="java.util.Map">
+        SELECT wechat_id as wechatId, address as processedAddress
+        FROM wechat_message_a_analyze_address
+        WHERE address IS NOT NULL AND address != ''
     </select>
     
 </mapper>

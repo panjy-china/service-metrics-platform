@@ -1,56 +1,92 @@
 package org.panjy.servicemetricsplatform.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.Date;
 import java.io.Serializable;
 
+import jakarta.persistence.*;
+
 /**
- * (WechatMember)实体类
- *
- * @author makejava
- * @since 2025-08-28 17:37:06
+ * 微信会员实体类
+ * 对应数据库表：tbl_wechat_member
  */
-@Data
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor
-@Table(name = "wechat_member")
+@Table(name = "tbl_wechat_member")
 public class WechatMember implements Serializable {
-    private static final long serialVersionUID = 352891375372870054L;
-/**
-     * 主键ID
+    
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 微信ID
      */
     @Id
-    private Long id;
-/**
-     * 成员微信ID
-     */
+    @Column(name = "wechat_id")
     private String wechatId;
-/**
-     * 成员昵称
+    
+    /**
+     * 客户ID
      */
-    private String nickname;
-/**
-     * 成员头像
-     */
-    private String avatar;
-/**
-     * 是否管理员
-     */
-    private Integer isAdmin;
-/**
-     * 是否已删除
-     */
-    private Integer isDeleted;
-/**
-     * 删除时间
-     */
-    private Date deletedDate;
+    @Column(name = "colCltID")
+    private String colCltID;
+    
+    // 默认构造函数
+    public WechatMember() {
+    }
+    
+    // 带参数的构造函数
+    public WechatMember(String wechatId, String colCltID) {
+        this.wechatId = wechatId;
+        this.colCltID = colCltID;
+    }
+    
+    // Getter方法
+    public String getWechatId() {
+        return wechatId;
+    }
+    
+    public String getColCltID() {
+        return colCltID;
+    }
+    
+    // Setter方法
+    public void setWechatId(String wechatId) {
+        this.wechatId = wechatId;
+    }
+    
+    public void setColCltID(String colCltID) {
+        this.colCltID = colCltID;
+    }
+    
+    // 手动实现builder模式
+    public static Builder builder() {
+        return new Builder();
+    }
+    
+    public static class Builder {
+        private String wechatId;
+        private String colCltID;
+        
+        public Builder wechatId(String wechatId) {
+            this.wechatId = wechatId;
+            return this;
+        }
+        
+        public Builder colCltID(String colCltID) {
+            this.colCltID = colCltID;
+            return this;
+        }
+        
+        public WechatMember build() {
+            WechatMember obj = new WechatMember();
+            obj.wechatId = this.wechatId;
+            obj.colCltID = this.colCltID;
+            return obj;
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return "WechatMember{" +
+                "wechatId='" + wechatId + '\'' +
+                ", colCltID='" + colCltID + '\'' +
+                '}';
+    }
 }
-
