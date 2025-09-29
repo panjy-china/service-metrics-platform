@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.UserFirstFeedbackMapper">
+    
+    <resultMap id="UserFirstFeedbackMap" type="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
+        <id property="id" column="id"/>
+        <result property="wechatId" column="wechat_id"/>
+        <result property="photoCount" column="photo_count"/>
+        <result property="hasTonguePhoto" column="has_tongue_photo"/>
+        <result property="hasBodyTypePhoto" column="has_body_type_photo"/>
+        <result property="customerServiceRequested" column="customer_service_requested"/>
+        <result property="analysis" column="analysis"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    
+    <!-- 批量查询用户首次反馈 -->
+    <select id="selectBatch" resultMap="UserFirstFeedbackMap">
+        SELECT 
+            id,
+            wechat_id,
+            photo_count,
+            has_tongue_photo,
+            has_body_type_photo,
+            customer_service_requested,
+            analysis,
+            create_time
+        FROM user_first_feedback
+        <where>
+            <if test="wechatId != null and wechatId != ''">
+                wechat_id = #{wechatId}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    
+    <!-- 单次插入用户首次反馈 -->
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
+        INSERT INTO user_first_feedback (
+            wechat_id,
+            photo_count,
+            has_tongue_photo,
+            has_body_type_photo,
+            customer_service_requested,
+            analysis,
+            create_time
+        ) VALUES (
+            #{wechatId},
+            #{photoCount},
+            #{hasTonguePhoto},
+            #{hasBodyTypePhoto},
+            #{customerServiceRequested},
+            #{analysis},
+            #{createTime, jdbcType=TIMESTAMP, javaType=java.time.LocalDateTime}
+        )
+    </insert>
+    
+</mapper>

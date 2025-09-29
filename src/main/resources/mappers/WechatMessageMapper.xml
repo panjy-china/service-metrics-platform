@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageMapper">
+    <resultMap id="MessageResultMap" type="org.panjy.servicemetricsplatform.entity.Message">
+        <constructor>
+            <arg column="sender" javaType="String"/>
+            <arg column="message" javaType="String"/>
+            <arg column="type" javaType="String"/>
+            <arg column="chatTime" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+    
+    <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
+        <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
+        <id property="wechatId" column="wechatId"/>
+
+        <!-- Conversation 的日期：映射为该会话的最早 chat_time -->
+        <result property="date" column="firstChatTime"/>
+
+        <!-- 映射 Message 列表 -->
+        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.Message" resultMap="MessageResultMap">
+        </collection>
+    </resultMap>
+
+<!-- 查询某时间段中发送信息的用户 wxid -->
+    <select id="findMessageByContent"
+            resultType="java.lang.String">
+        SELECT DISTINCT friend_wechat_id
+        FROM wechat_message
+        WHERE 1 = 1
+        <if test="content != null and content != ''">
+            AND content LIKE CONCAT('%', #{content}, '%')
+        </if>
+        <if test="begin != null">
+            AND chat_time &gt;= #{begin}
+        </if>
+        <if test="end != null">
+            AND chat_time &lt;= #{end}
+        </if>
+    </select>
+<!-- 查询某天的活跃用户个数 -->
+    <select id="findActiveUsers" resultType="java.lang.String">
+        SELECT DISTINCT friend_wechat_id
+        FROM aikang.wechat_message
+        WHERE friend_nickname = sender
+        AND chat_time &gt;= subtractDays(toDateTime(#{checkTime}), 3)
+        AND chat_time &lt;= toDateTime(#{checkTime});
+    </select>
+<!-- 查询留存率 -->
+    <select id="findUserServived" resultType="java.lang.String">
+        SELECT w.friend_wechat_id AS wechat_id
+        FROM wechat_message w
+        WHERE toDate(w.chat_time) BETWEEN toDate(#{checkTime}) AND addDays(toDate(#{checkTime}), #{days})
+          AND w.friend_nickname = w.sender
+        GROUP BY w.friend_wechat_id
+        HAVING COUNT(DISTINCT toDate(w.chat_time)) = #{days};
+    </select>
+    <select id="findInactiveUsers" resultType="java.lang.String">
+        SELECT t.wechat_id
+        FROM (
+                 SELECT w1.friend_wechat_id AS wechat_id
+                 FROM aikang.wechat_message w1
+                 WHERE w1.sender = w1.friend_nickname
+                 GROUP BY w1.friend_wechat_id
+                 HAVING MIN(w1.chat_time) BETWEEN toDateTime(#{startTime})
+                            AND addDays(toDateTime(#{startTime}), 1)
+             ) t
+        WHERE t.wechat_id NOT IN (
+            SELECT u1.friend_wechat_id AS wechat_id
+            FROM aikang.wechat_message u1
+            WHERE u1.sender = u1.friend_nickname
+              AND u1.chat_time &lt;= addDays(toDateTime(#{startTime}), 7)
+            GROUP BY u1.friend_wechat_id
+            HAVING MAX(u1.chat_time) &gt;= addDays(toDateTime(#{startTime}), 5)
+        )
+    </select>
+    <select id="findConversationsByDate" resultMap="ConversationResultMap">
+        SELECT
+        friend_wechat_id AS wechatId,
+        content AS message,
+        CASE
+            WHEN sender = wechat_nickname THEN wechat_id
+            ELSE friend_wechat_id
+        END AS sender,
+        message_type AS type,
+        chat_time AS chatTime,
+        MIN(chat_time) OVER (PARTITION BY friend_wechat_id) AS firstChatTime
+        FROM wechat_message
+        WHERE chat_time &gt;= #{begin} AND chat_time &lt; #{end}
+        AND content NOT LIKE '%你通过群发助手%'
+        AND content NOT LIKE '%你已添加了%'
+        ORDER BY friend_wechat_id, chat_time ASC
+    </select>
+
+
+    <!-- 每个好友在指定 date 之后首次聊天起 1 小时内的消息 -->
+    <select id="findFirstHourConversationsAfterDate" resultMap="ConversationResultMap">
+        WITH FirstMsgTime AS (
+            SELECT
+                friend_wechat_id,
+                MIN(chat_time) AS first_chat_time
+            FROM wechat_message
+            GROUP BY friend_wechat_id
+            HAVING MIN(chat_time) >= #{date}
+        ),
+             FirstHourMsgs AS (
+                 SELECT
+                     wm.friend_wechat_id,
+                     wm.content,
+                     wm.sender,
+                     wm.message_type,
+                     wm.chat_time,
+                     wm.wechat_nickname,
+                     wm.wechat_id,
+                     dateDiff('second', fmt.first_chat_time, wm.chat_time) AS seconds_after_first_msg
+                 FROM wechat_message wm
+                          JOIN FirstMsgTime fmt
+                               ON wm.friend_wechat_id = fmt.friend_wechat_id
+             )
+        SELECT
+            friend_wechat_id AS wechatId,
+            content AS message,
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+                END AS sender,
+            message_type AS type,
+            fmt.first_chat_time AS chatTime
+        FROM FirstHourMsgs
+        WHERE seconds_after_first_msg BETWEEN 0 AND 3600
+          AND content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND content NOT LIKE '%添加到%'
+        ORDER BY wechatId, chatTime;
+
+    </select>
+
+    <!-- 每个用户首次聊天两天内的对话记录 -->
+    <select id="findConversationsWithinTwoDaysOfFirstChat" resultMap="ConversationResultMap">
+        WITH FirstMsgTime AS (
+            SELECT
+                friend_wechat_id,
+                MIN(chat_time) AS first_chat_time
+            FROM aikang.wechat_message
+            GROUP BY friend_wechat_id
+        ),
+        TwoDaysMsgs AS (
+            SELECT
+                wm.friend_wechat_id,
+                wm.content,
+                wm.sender,
+                wm.message_type,
+                wm.chat_time,
+                wm.wechat_nickname,
+                wm.wechat_id
+            FROM aikang.wechat_message wm
+            JOIN FirstMsgTime fmt
+                ON wm.friend_wechat_id = fmt.friend_wechat_id
+            WHERE wm.chat_time &gt;= fmt.first_chat_time
+              AND wm.chat_time &lt;= addDays(fmt.first_chat_time, 2)
+        )
+        SELECT
+            friend_wechat_id AS wechatId,
+            content AS message,
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+            END AS sender,
+            message_type AS type,
+            chat_time AS chatTime,
+            MIN(chat_time) OVER (PARTITION BY friend_wechat_id) AS firstChatTime
+        FROM TwoDaysMsgs
+        WHERE content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND content NOT LIKE '%添加到%'
+        ORDER BY wechatId, chatTime;
+    </select>
+
+    <!-- 每个用户首次聊天两天内的对话记录，限定首次聊天的日期在传入日期之后 -->
+    <select id="findConversationsWithinTwoDaysOfFirstChatAfterDate" resultMap="ConversationResultMap">
+        WITH FirstMsgTime AS (
+            SELECT
+                friend_wechat_id,
+                MIN(chat_time) AS first_chat_time
+            FROM aikang.wechat_message
+            GROUP BY friend_wechat_id
+            HAVING MIN(chat_time) >= #{date}
+        ),
+        TwoDaysMsgs AS (
+            SELECT
+                wm.friend_wechat_id,
+                wm.content,
+                wm.sender,
+                wm.message_type,
+                wm.chat_time,
+                wm.wechat_nickname,
+                wm.wechat_id
+            FROM aikang.wechat_message wm
+            JOIN FirstMsgTime fmt
+                ON wm.friend_wechat_id = fmt.friend_wechat_id
+            WHERE wm.chat_time &gt;= fmt.first_chat_time
+              AND wm.chat_time &lt;= addDays(fmt.first_chat_time, 2)
+        )
+        SELECT
+            friend_wechat_id AS wechatId,
+            content AS message,
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+            END AS sender,
+            message_type AS type,
+            chat_time AS chatTime,
+            MIN(chat_time) OVER (PARTITION BY friend_wechat_id) AS firstChatTime
+        FROM TwoDaysMsgs
+        WHERE content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND content NOT LIKE '%添加到%'
+        ORDER BY wechatId, chatTime;
+    </select>
+
+    <!-- 指定用户首次聊天两天内的对话记录 -->
+    <select id="findConversationsWithinTwoDaysOfFirstChatByWechatId" resultMap="ConversationResultMap">
+        WITH FirstMsgTime AS (
+            SELECT
+                friend_wechat_id,
+                MIN(chat_time) AS first_chat_time
+            FROM aikang.wechat_message
+            WHERE friend_wechat_id = #{wechatId}
+            GROUP BY friend_wechat_id
+        ),
+        TwoDaysMsgs AS (
+            SELECT
+                wm.friend_wechat_id,
+                wm.content,
+                wm.sender,
+                wm.message_type,
+                wm.chat_time,
+                wm.wechat_nickname,
+                wm.wechat_id
+            FROM aikang.wechat_message wm
+            JOIN FirstMsgTime fmt
+                ON wm.friend_wechat_id = fmt.friend_wechat_id
+            WHERE wm.chat_time &gt;= fmt.first_chat_time
+              AND wm.chat_time &lt;= addDays(fmt.first_chat_time, 2)
+              AND wm.friend_wechat_id = #{wechatId}
+        )
+        SELECT
+            friend_wechat_id AS wechatId,
+            content AS message,
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+            END AS sender,
+            message_type AS type,
+            chat_time AS chatTime,
+            MIN(chat_time) OVER (PARTITION BY friend_wechat_id) AS firstChatTime
+        FROM TwoDaysMsgs
+        WHERE content NOT LIKE '%你通过群发助手%'
+          AND content NOT LIKE '%你已添加了%'
+          AND content NOT LIKE '%添加到%'
+        ORDER BY wechatId, chatTime;
+    </select>
+
+</mapper>

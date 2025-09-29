@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.UserMealCheckinMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.UserMealCheckin">
+        <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
+        <result column="checkin_date" jdbcType="DATE" property="checkinDate" />
+        <result column="breakfast_checked" jdbcType="TINYINT" property="breakfastChecked" />
+        <result column="lunch_checked" jdbcType="TINYINT" property="lunchChecked" />
+        <result column="dinner_checked" jdbcType="TINYINT" property="dinnerChecked" />
+        <result column="has_weight_feedback" jdbcType="TINYINT" property="hasWeightFeedback" />
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        wechat_id, checkin_date, breakfast_checked, lunch_checked, dinner_checked, has_weight_feedback
+    </sql>
+    
+    <!-- 批量查询用户餐食打卡记录 -->
+    <select id="batchSelect" parameterType="java.util.List" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM aikang.user_meal_checkin
+        WHERE (wechat_id, checkin_date) IN
+        <foreach collection="userMealCheckins" item="item" open="(" separator="),(" close=")">
+            #{item.wechatId,jdbcType=VARCHAR}, #{item.checkinDate,jdbcType=DATE}
+        </foreach>
+    </select>
+    
+    <!-- 批量插入用户餐食打卡记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO aikang.user_meal_checkin (
+            wechat_id, checkin_date, breakfast_checked, lunch_checked, dinner_checked, has_weight_feedback
+        ) VALUES
+        <foreach collection="userMealCheckins" item="item" separator=",">
+            (
+                #{item.wechatId,jdbcType=VARCHAR},
+                #{item.checkinDate,jdbcType=DATE},
+                #{item.breakfastChecked,jdbcType=TINYINT},
+                #{item.lunchChecked,jdbcType=TINYINT},
+                #{item.dinnerChecked,jdbcType=TINYINT},
+                #{item.hasWeightFeedback,jdbcType=TINYINT}
+            )
+        </foreach>
+    </insert>
+    
+</mapper>

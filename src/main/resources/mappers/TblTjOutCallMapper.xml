@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.TblTjOutCallMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.TblTjOutCall">
+        <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
+        <result column="DNISANS" jdbcType="INTEGER" property="DNISANS" />
+        <result column="DNANSTIME" jdbcType="TIMESTAMP" property="DNANSTIME" />
+        <result column="DNOUTTIME" jdbcType="TIMESTAMP" property="DNOUTTIME" />
+        <result column="DNINTIME" jdbcType="TIMESTAMP" property="DNINTIME" />
+    </resultMap>
+    
+    <!-- FirstCallSummary结果映射 -->
+    <resultMap id="FirstCallSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.FirstCallSummary">
+        <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
+        <result column="first_call_date" jdbcType="TIMESTAMP" property="firstCallDate" />
+        <result column="call_duration" jdbcType="INTEGER" property="callDuration" />
+    </resultMap>
+    
+    <!-- CallCountSummary结果映射 -->
+    <resultMap id="CallCountSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.CallCountSummary">
+        <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
+        <result column="call_count" jdbcType="INTEGER" property="callCount" />
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        colCltID, DNISANS, DNANSTIME, DNOUTTIME, DNINTIME
+    </sql>
+    
+    <!-- 根据用户ID查询符合条件的第一条记录 -->
+    <select id="selectFirstByUserId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM aikang.Tbl_Tj_OutCall
+        WHERE colCltID = #{userId,jdbcType=VARCHAR}
+          AND DNISANS = 1
+          AND dateDiff('second', DNANSTIME, DNOUTTIME) > 60
+        ORDER BY DNINTIME ASC
+        LIMIT 1
+    </select>
+    
+    <!-- 查询所有符合条件的客户ID（去重） -->
+    <select id="selectDistinctClientIds" resultType="java.lang.String">
+        SELECT 
+            DISTINCT twm.colCltID 
+        FROM aikang.wechat_member wm
+        INNER JOIN aikang.tbl_wechat_member twm
+            ON wm.wechat_id = twm.wechat_id
+    </select>
+    
+    <!-- 插入首通电话摘要记录 -->
+    <insert id="insertFirstCallSummary" parameterType="org.panjy.servicemetricsplatform.entity.FirstCallSummary">
+        INSERT INTO aikang.tbl_first_call_summary (
+            colCltID, first_call_date, call_duration
+        ) VALUES (
+            #{firstCallSummary.colCltID,jdbcType=VARCHAR},
+            #{firstCallSummary.firstCallDate,jdbcType=TIMESTAMP},
+            #{firstCallSummary.callDuration,jdbcType=INTEGER}
+        )
+    </insert>
+    
+    <!-- 批量插入首通电话摘要记录 -->
+    <insert id="batchInsertFirstCallSummary" parameterType="java.util.List">
+        INSERT INTO aikang.tbl_first_call_summary (
+            colCltID, first_call_date, call_duration
+        ) VALUES
+        <foreach collection="firstCallSummaries" item="item" separator=",">
+            (
+                #{item.colCltID,jdbcType=VARCHAR},
+                #{item.firstCallDate,jdbcType=TIMESTAMP},
+                #{item.callDuration,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 根据用户ID查询通话次数 -->
+    <select id="selectCallCountByUserId" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT 
+            count(*) AS call_count
+        FROM aikang.Tbl_Tj_OutCall
+        WHERE colCltID = #{userId,jdbcType=VARCHAR}
+          AND DNISANS = 1
+          AND (DNOUTTIME - DNANSTIME) > 60
+    </select>
+    
+    <!-- 批量插入用户通话次数统计 -->
+    <insert id="batchInsertUserCallCount" parameterType="java.util.List">
+        INSERT INTO aikang.user_call_count (
+            colCltID, call_count
+        ) VALUES
+        <foreach collection="userCallCounts" item="item" separator=",">
+            (
+                #{item.colCltID,jdbcType=VARCHAR},
+                #{item.call_count,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 清空用户通话次数统计表 -->
+    <delete id="truncateUserCallCount">
+        TRUNCATE TABLE aikang.user_call_count
+    </delete>
+    
+</mapper>

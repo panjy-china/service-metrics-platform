@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+        <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
+        <result column="msg_type" jdbcType="INTEGER" property="msgType" />
+        <result column="wechat_time" jdbcType="BIGINT" property="wechatTime" />
+        <result column="content" jdbcType="LONGVARCHAR" property="content" />
+        <result column="address" jdbcType="LONGVARCHAR" property="address" typeHandler="org.panjy.servicemetricsplatform.util.AddressTypeHandler" />
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        wechat_id, msg_type, wechat_time, content, address
+    </sql>
+    
+    <!-- 插入单条记录 -->
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+        INSERT INTO wechat_message_a_analyze_address (
+            wechat_id, msg_type, wechat_time, content, address
+        ) VALUES (
+            #{wechatId,jdbcType=VARCHAR}, 
+            #{msgType,jdbcType=INTEGER}, 
+            #{wechatTime,jdbcType=BIGINT}, 
+            #{content,jdbcType=LONGVARCHAR}, 
+            #{address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
+        )
+    </insert>
+    
+    <!-- 批量插入记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO wechat_message_a_analyze_address (
+            wechat_id, msg_type, wechat_time, content, address
+        ) VALUES
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.wechatId,jdbcType=VARCHAR}, 
+                #{record.msgType,jdbcType=INTEGER}, 
+                #{record.wechatTime,jdbcType=BIGINT}, 
+                #{record.content,jdbcType=LONGVARCHAR}, 
+                #{record.address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 根据微信ID和时间查询记录（替代根据ID查询） -->
+    <select id="selectByWechatIdAndTime" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+          AND wechat_time = #{wechatTime,jdbcType=BIGINT}
+        LIMIT 1
+    </select>
+    
+    <!-- 根据微信ID查询记录 -->
+    <select id="selectByWechatId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+        ORDER BY wechat_time DESC
+    </select>
+    
+    <!-- 根据时间范围查询记录 -->
+    <select id="selectByTimeRange" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        WHERE wechat_time BETWEEN #{startTime,jdbcType=BIGINT} AND #{endTime,jdbcType=BIGINT}
+        ORDER BY wechat_time DESC
+    </select>
+    
+    <!-- 联表查询：获取wechat_member和wechat_message_a_analyze_address中同时存在的wxid与处理后的地址 -->
+    <select id="selectCommonWxidWithProcessedAddress" resultType="java.util.Map">
+        SELECT 
+            wm.wechat_id as wechatId,
+            wmaa.address as processedAddress
+        FROM aikang.wechat_member wm
+        INNER JOIN aikang.wechat_message_a_analyze_address wmaa 
+            ON wm.wechat_id = wmaa.wechat_id
+        WHERE wmaa.address IS NOT NULL 
+            AND wmaa.address != ''
+    </select>
+    
+    <!-- 根据微信ID和时间范围查询记录 -->
+    <select id="selectByWechatIdAndTimeRange" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+          AND wechat_time BETWEEN #{startTime,jdbcType=BIGINT} AND #{endTime,jdbcType=BIGINT}
+        ORDER BY wechat_time DESC
+    </select>
+    
+    <!-- 根据微信ID和时间更新记录 -->
+    <update id="updateByWechatIdAndTime" parameterType="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+        UPDATE wechat_message_a_analyze_address
+        SET 
+            msg_type = #{msgType,jdbcType=INTEGER},
+            content = #{content,jdbcType=LONGVARCHAR},
+            address = #{address,jdbcType=LONGVARCHAR, typeHandler=org.panjy.servicemetricsplatform.util.AddressTypeHandler}
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+          AND wechat_time = #{wechatTime,jdbcType=BIGINT}
+    </update>
+    
+    <!-- 根据微信ID和时间删除记录 -->
+    <delete id="deleteByWechatIdAndTime">
+        DELETE FROM wechat_message_a_analyze_address
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+          AND wechat_time = #{wechatTime,jdbcType=BIGINT}
+    </delete>
+    
+    <!-- 检查记录是否已存在 - 使用wechat_id和wechat_time的组合 -->
+    <select id="countByWechatIdAndTime" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM wechat_message_a_analyze_address
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+          AND wechat_time = #{wechatTime,jdbcType=BIGINT}
+    </select>
+    
+    <!-- 分页查询所有记录 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        ORDER BY wechat_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset}, #{limit}
+        </if>
+    </select>
+    
+    <!-- 查询记录总数 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM wechat_message_a_analyze_address
+    </select>
+    
+    <!-- 查询每个用户的最新地址（排除北京大兴） -->
+    <select id="getUserLatestAddresses" resultType="java.lang.String">
+        <![CDATA[
+            SELECT *
+            FROM (
+                     SELECT
+                         max(address) AS max_address
+                     FROM aikang.wechat_message_a_analyze_address
+                     GROUP BY wechat_id
+                 ) t
+            WHERE t.max_address NOT LIKE '%北京%大兴%';
+        ]]>
+    </select>
+    
+    <!-- 获取所有处理后的地址 -->
+    <select id="getAllProcessedAddresses" resultType="java.lang.String">
+        SELECT DISTINCT address
+        FROM wechat_message_a_analyze_address
+        WHERE address IS NOT NULL AND address != ''
+    </select>
+    
+    <!-- 获取所有处理后的地址及其对应的微信ID -->
+    <select id="getAllProcessedAddressWithWechatId" resultType="java.util.Map">
+        SELECT wechat_id as wechatId, address as processedAddress
+        FROM wechat_message_a_analyze_address
+        WHERE address IS NOT NULL AND address != ''
+    </select>
+    
+</mapper>

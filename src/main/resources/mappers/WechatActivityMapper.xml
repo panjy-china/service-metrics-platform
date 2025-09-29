@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatActivityMapper">
+
+    <resultMap id="WechatActivityMap" type="org.panjy.servicemetricsplatform.entity.WechatActivity">
+        <result property="wechatId" column="wechat_id"/>
+        <result property="firstActivityTime" column="first_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
+        <result property="lastActivityTime" column="last_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
+    </resultMap>
+
+    <select id="getWechatActivities" resultMap="WechatActivityMap">
+        SELECT
+            t.friend_wechat_id AS wechat_id,
+            t.first_activity_time,
+            t.last_activity_time
+        FROM (
+                 SELECT
+                     fa.friend_wechat_id,
+                     MIN(fa.chat_time) AS first_activity_time,
+                     MAX(fa.chat_time) AS last_activity_time
+                 FROM aikang.wechat_message fa
+                 GROUP BY fa.friend_wechat_id
+             ) t
+        WHERE t.first_activity_time BETWEEN #{checkTime}
+                  AND addDays(toDateTime(#{checkTime}), 1)
+    </select>
+
+    <select id="getWechatGroupActivities" resultMap="WechatActivityMap">
+        SELECT
+            t.sender AS wechat_id,
+            fromUnixTimestamp(toInt64(t.first_activity_time / 1000)) AS first_activity_time,
+            fromUnixTimestamp(toInt64(t.last_activity_time / 1000)) AS last_activity_time
+        FROM (
+                 SELECT
+                     fa.sender,
+                     MIN(fa.wechat_time) AS first_activity_time,
+                     MAX(fa.wechat_time) AS last_activity_time
+                 FROM aikang.wechat_group_message fa
+                 GROUP BY fa.sender
+             ) t
+        WHERE t.first_activity_time BETWEEN toUnixTimestamp(#{checkTime}) * 1000
+                  AND toUnixTimestamp(addDays(toDateTime(#{checkTime}), 1)) * 1000
+    </select>
+
+</mapper>

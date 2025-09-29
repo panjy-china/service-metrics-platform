@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # 主应用服务
+  service-metrics-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: service-metrics-platform:latest
+    container_name: service-metrics-platform
+    restart: unless-stopped
+    # 添加端口映射
+    ports:
+      - "9712:9712"
+    environment:
+      # Spring配置
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=9712
+      
+      # ClickHouse配置
+      - CLICKHOUSE_URL=jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION
+      - CLICKHOUSE_USERNAME=default
+      - CLICKHOUSE_PASSWORD=123456
+      
+      # LLM配置
+      - DASHSCOPE_API_KEY=sk-4d14608f5c5d40eb926fcd2f44258e20
+      
+      # JVM配置
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport
+    volumes:
+      - ./logs:/app/logs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - service-metrics-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9712/api/order-metrics/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 快速构建版本的应用服务
+  service-metrics-platform-fast:
+    build:
+      context: .
+      dockerfile: Dockerfile.fast
+    image: service-metrics-platform:fast
+    container_name: service-metrics-platform-fast
+    restart: unless-stopped
+    # 添加端口映射
+    ports:
+      - "9713:9712"
+    environment:
+      # Spring配置
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=9712
+      
+      # 数据库配置
+      - MYSQL_URL=jdbc:mysql://rm-uf6itdd69r9j2b45ato.mysql.rds.aliyuncs.com:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&connectionTimeZone=LOCAL
+      - MYSQL_USERNAME=jcs
+      - MYSQL_PASSWORD=Jueceshu2021
+      
+      # ClickHouse配置
+      - CLICKHOUSE_URL=jdbc:clickhouse://106.14.221.209:8123/aikang?compress=0&http_connection_provider=HTTP_URL_CONNECTION
+      - CLICKHOUSE_USERNAME=default
+      - CLICKHOUSE_PASSWORD=123456
+      
+      # LLM配置
+      - DASHSCOPE_API_KEY=sk-4d14608f5c5d40eb926fcd2f44258e20
+      
+      # JVM配置
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport
+    volumes:
+      - ./logs:/app/logs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - service-metrics-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9712/api/order-metrics/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx反向代理
+#  nginx:
+#    image: nginx:alpine
+#    container_name: service-metrics-nginx
+#    restart: unless-stopped
+#    ports:
+#      # 使用8080端口避免冲突
+#      - "8080:80"
+#    volumes:
+#      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+#      - nginx_logs:/var/log/nginx
+#    depends_on:
+#      - service-metrics-platform
+#    networks:
+#      - service-metrics-network
+
+volumes:
+  nginx_logs:
+    driver: local
+
+networks:
+  service-metrics-network:
+    driver: bridge

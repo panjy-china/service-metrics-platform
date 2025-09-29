@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.UserGuidanceStatMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+        <result column="create_time" jdbcType="DATE" property="createTime" />
+        <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
+        <result column="guidance_count" jdbcType="INTEGER" property="guidanceCount" />
+        <result column="personalized_guidance_count" jdbcType="INTEGER" property="personalizedGuidanceCount" />
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        create_time, wechat_id, guidance_count, personalized_guidance_count
+    </sql>
+    
+    <!-- 批量查询用户指导统计记录 -->
+    <select id="batchSelect" parameterType="java.util.List" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM aikang.user_guidance_stat
+        WHERE (create_time, wechat_id) IN
+        <foreach collection="userGuidanceStats" item="item" open="(" separator="),(" close=")">
+            #{item.createTime,jdbcType=DATE}, #{item.wechatId,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+    
+    <!-- 批量插入用户指导统计记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO aikang.user_guidance_stat (
+            create_time, wechat_id, guidance_count, personalized_guidance_count
+        ) VALUES
+        <foreach collection="userGuidanceStats" item="item" separator=",">
+            (
+                #{item.createTime,jdbcType=DATE},
+                #{item.wechatId,jdbcType=VARCHAR},
+                #{item.guidanceCount,jdbcType=INTEGER},
+                #{item.personalizedGuidanceCount,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+    
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+    <!-- 全局设置 -->
+    <settings>
+        <!-- 开启下划线自动映射到驼峰命名 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 使用STDOUT_LOGGING记录SQL日志，可以显示详细结果 -->
+        <setting name="logImpl" value="STDOUT_LOGGING"/>
+    </settings>
+
+    <!-- 类型处理器 -->
+    <typeHandlers>
+        <typeHandler handler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
+        <typeHandler handler="org.panjy.servicemetricsplatform.util.AddressTypeHandler" javaType="string" jdbcType="LONGVARCHAR"/>
+    </typeHandlers>
+
+</configuration>
