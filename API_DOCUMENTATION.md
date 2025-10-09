@@ -1014,7 +1014,80 @@ GET /api/comprehensive/metrics/2024-01-15
 
 ---
 
-## 7. 常用查询示例
+## 7. 用户指导统计 API (User Guidance Statistics)
+
+**Base Path**: `/api/user-guidance`
+
+### 7.1 饮食指导分析接口
+
+#### 7.1.1 分析对话中的饮食指导情况
+- **URL**: `POST /api/user-guidance/analyze`
+- **描述**: 分析对话中的饮食指导情况，当客服对用户进行饮食信息的指导时看作一次指导次数，若该指导字数超过15字则认为是一次个性化饮食指导
+- **请求参数**:
+  - `conversation` (Conversation object, required): 对话记录对象
+
+**请求示例**:
+```json
+POST /api/user-guidance/analyze
+Content-Type: application/json
+
+{
+  "wechatId": "user123",
+  "date": "2024-01-15T10:30:00",
+  "messages": [
+    {
+      "sender": "客服",
+      "message": "建议您控制热量摄入，多吃蔬菜水果",
+      "type": "Text",
+      "chatTime": "2024-01-15T10:30:00"
+    },
+    {
+      "sender": "用户",
+      "message": "好的，谢谢",
+      "type": "Text",
+      "chatTime": "2024-01-15T10:31:00"
+    }
+  ]
+}
+```
+
+**响应示例**:
+```json
+{
+  "createTime": "2024-01-15",
+  "wechatId": "user123",
+  "guidanceCount": 1,
+  "personalizedGuidanceCount": 1
+}
+```
+
+### 7.2 用户指导统计查询接口
+
+#### 7.2.1 根据微信ID和日期查询用户指导统计记录
+- **URL**: `GET /api/user-guidance/query`
+- **描述**: 根据微信ID和日期查询用户指导统计记录
+- **查询参数**:
+  - `wechatId` (string, required): 用户微信ID
+  - `date` (string, required): 日期，格式: `yyyy-MM-dd`
+
+**请求示例**:
+```
+GET /api/user-guidance/query?wechatId=user123&date=2024-01-15
+```
+
+**响应示例**:
+```json
+{
+  "createTime": "2024-01-15",
+  "wechatId": "user123",
+  "guidanceCount": 1,
+  "personalizedGuidanceCount": 1
+}
+```
+
+---
+
+## 8. 常用查询示例
 
 ### 订单指标查询
 ```
@@ -1042,6 +1115,23 @@ curl -X GET "http://localhost:8080/analyze/address/distribution"
 curl -X GET "http://localhost:8080/analyze/address/2024-01-15"
 ```
 
----
+### 饮食指导分析
+```
+# 分析对话中的饮食指导情况
+curl -X POST "http://localhost:8080/api/user-guidance/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wechatId": "user123",
+    "date": "2024-01-15T10:30:00",
+    "messages": [
+      {
+        "sender": "客服",
+        "message": "建议您控制热量摄入，多吃蔬菜水果",
+        "type": "Text",
+        "chatTime": "2024-01-15T10:30:00"
+      }
+    ]
+  }'
 
-*最后更新时间: 2025-09-25*
+# 查询用户指导统计记录
+curl -X GET "http://localhost:8080

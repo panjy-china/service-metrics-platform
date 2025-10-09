@@ -263,5 +263,37 @@
           AND content NOT LIKE '%添加到%'
         ORDER BY wechatId, chatTime;
     </select>
+    
+    <!-- 根据微信ID查询用户最早的一条消息记录 -->
+    <select id="findEarliestMessageByWechatId" resultMap="MessageResultMap">
+        SELECT
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+            END AS sender,
+            content AS message,
+            message_type AS type,
+            chat_time AS chatTime
+        FROM wechat_message
+        WHERE friend_wechat_id = #{wechatId}
+        ORDER BY chat_time ASC
+        LIMIT 1
+    </select>
+    
+    <!-- 根据微信ID查询用户最晚的一条消息记录 -->
+    <select id="findLatestMessageByWechatId" resultMap="MessageResultMap">
+        SELECT
+            CASE
+                WHEN sender = wechat_nickname THEN wechat_id
+                ELSE friend_wechat_id
+            END AS sender,
+            content AS message,
+            message_type AS type,
+            chat_time AS chatTime
+        FROM wechat_message
+        WHERE friend_wechat_id = #{wechatId}
+        ORDER BY chat_time DESC
+        LIMIT 1
+    </select>
 
 </mapper>

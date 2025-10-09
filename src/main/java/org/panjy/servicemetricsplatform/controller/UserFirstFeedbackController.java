@@ -67,4 +67,92 @@ public class UserFirstFeedbackController {
         
         return ResponseEntity.ok(response);
     }
+    
+    /**
+     * 获取舌苔照片提交比例
+     * @return 舌苔照片提交比例
+     */
+    @GetMapping("/tongue-photo-rate")
+    public ResponseEntity<Map<String, Object>> getTonguePhotoSubmissionRate() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            double rate = userFirstFeedbackService.calculateTonguePhotoSubmissionRate();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", rate);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 获取体型照片提交比例
+     * @return 体型照片提交比例
+     */
+    @GetMapping("/body-type-photo-rate")
+    public ResponseEntity<Map<String, Object>> getBodyTypePhotoSubmissionRate() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            double rate = userFirstFeedbackService.calculateBodyTypePhotoSubmissionRate();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", rate);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 获取舌苔照片提交统计信息
+     * @return 包含提交数量和总数量的数组，[提交数, 总数]
+     */
+    @GetMapping("/tongue-photo-stats")
+    public ResponseEntity<Map<String, Object>> getTonguePhotoSubmissionStats() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            long[] stats = userFirstFeedbackService.getTonguePhotoSubmissionStats();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", stats);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 获取体型照片提交统计信息
+     * @return 包含提交数量和总数量的数组，[提交数, 总数]
+     */
+    @GetMapping("/body-type-photo-stats")
+    public ResponseEntity<Map<String, Object>> getBodyTypePhotoSubmissionStats() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            long[] stats = userFirstFeedbackService.getBodyTypePhotoSubmissionStats();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", stats);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
 }

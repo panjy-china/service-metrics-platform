@@ -3,6 +3,7 @@ package org.panjy.servicemetricsplatform.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.panjy.servicemetricsplatform.entity.CallStatistics;
+//import org.panjy.servicemetricsplatform.entity.CallDurationStatistics;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public interface TblTjOutCallStatisticsMapper {
      */
     @Select({
         "SELECT",
-        "    m.wechat_id,",
+        "    m.wechat_id AS wechatId,",
         "    countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 60) AS total_calls,",
         "    countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 900) AS long_calls",
         "FROM aikang.Tbl_Tj_OutCall o",
@@ -44,4 +45,36 @@ public interface TblTjOutCallStatisticsMapper {
         "ORDER BY total_calls DESC"
     })
     List<CallStatistics> selectOutCallStatistics();
+    
+    /**
+     * 查询OutCall表中时长超过60秒和超过5分钟的通话统计
+     * 对应SQL:
+     * SELECT
+     *     m.wechat_id,
+     *     countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 60) AS calls_over_60s,
+     *     countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 300) AS calls_over_300s
+     * FROM aikang.Tbl_Tj_OutCall o
+     * INNER JOIN aikang.tbl_wechat_member m
+     *     ON o.colCltID = m.colCltID
+     * WHERE o.DNOUTTIME IS NOT NULL
+     *   AND o.DNINTIME IS NOT NULL
+     * GROUP BY m.wechat_id
+     * ORDER BY calls_over_60s DESC;
+     * 
+     * @return 通话统计信息列表
+     */
+    @Select({
+        "SELECT",
+        "    m.wechat_id AS wechatId,",
+        "    countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 60) AS total_calls,",
+        "    countIf(dateDiff('second', o.DNINTIME, o.DNOUTTIME) >= 300) AS long_calls",
+        "FROM aikang.Tbl_Tj_OutCall o",
+        "INNER JOIN aikang.tbl_wechat_member m",
+        "    ON o.colCltID = m.colCltID",
+        "WHERE o.DNOUTTIME IS NOT NULL",
+        "  AND o.DNINTIME IS NOT NULL",
+        "GROUP BY m.wechat_id",
+        "ORDER BY total_calls DESC"
+    })
+    List<CallStatistics> selectOutCallStatisticsOver60sAnd300s();
 }

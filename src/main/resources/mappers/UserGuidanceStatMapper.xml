@@ -43,4 +43,43 @@
         </foreach>
     </insert>
     
+    <!-- 根据微信ID和日期查询用户指导统计记录 -->
+    <select id="selectByWechatIdAndDate" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM aikang.user_guidance_stat
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+        AND create_time = #{createTime,jdbcType=DATE}
+    </select>
+    
+    <!-- 插入用户指导统计记录 -->
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+        INSERT INTO aikang.user_guidance_stat (
+            create_time, wechat_id, guidance_count, personalized_guidance_count
+        ) VALUES (
+            #{createTime,jdbcType=DATE},
+            #{wechatId,jdbcType=VARCHAR},
+            #{guidanceCount,jdbcType=INTEGER},
+            #{personalizedGuidanceCount,jdbcType=INTEGER}
+        )
+    </insert>
+    
+    <!-- 更新用户指导统计记录 -->
+    <update id="update" parameterType="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+        UPDATE aikang.user_guidance_stat
+        SET 
+            guidance_count = #{guidanceCount,jdbcType=INTEGER},
+            personalized_guidance_count = #{personalizedGuidanceCount,jdbcType=INTEGER}
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+        AND create_time = #{createTime,jdbcType=DATE}
+    </update>
+    
+    <!-- 获取总指导次数和总个性化指导次数 -->
+    <select id="getTotalGuidanceCounts" resultMap="BaseResultMap">
+        SELECT 
+            SUM(guidance_count) AS guidance_count,
+            SUM(personalized_guidance_count) AS personalized_guidance_count
+        FROM aikang.user_guidance_stat
+    </select>
+    
 </mapper>

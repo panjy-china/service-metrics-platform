@@ -36,4 +36,33 @@ public class UserMealCheckinService {
     public int batchInsert(List<UserMealCheckin> userMealCheckins) {
         return userMealCheckinMapper.batchInsert(userMealCheckins);
     }
+    
+    /**
+     * 计算总打卡次数（所有记录的早中晚打卡次数之和）
+     * 
+     * @return 总打卡次数
+     */
+    public int calculateTotalCheckinCount() {
+        return userMealCheckinMapper.calculateTotalCheckinCount();
+    }
+    
+    /**
+     * 计算指定微信用户的总服务天数
+     * 
+     * @param wechatId 微信ID
+     * @return 总服务天数
+     */
+    public int calculateTotalServiceDaysByWechatId(String wechatId) {
+        return userMealCheckinMapper.calculateTotalServiceDaysByWechatId(wechatId);
+    }
+    
+    /**
+     * 计算指定微信用户的总打卡次数
+     * 
+     * @param wechatId 微信ID
+     * @return 用户总打卡次数
+     */
+    public int calculateUserTotalCheckinCount(String wechatId) {
+        return userMealCheckinMapper.calculateUserTotalCheckinCount(wechatId);
+    }
 }

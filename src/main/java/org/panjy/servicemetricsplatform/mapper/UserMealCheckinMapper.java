@@ -28,4 +28,27 @@ public interface UserMealCheckinMapper {
      * @return 受影响的行数
      */
     int batchInsert(@Param("userMealCheckins") List<UserMealCheckin> userMealCheckins);
+    
+    /**
+     * 计算总打卡次数（所有记录的早中晚打卡次数之和）
+     * 
+     * @return 总打卡次数
+     */
+    int calculateTotalCheckinCount();
+    
+    /**
+     * 计算指定微信用户的总服务天数
+     * 
+     * @param wechatId 微信ID
+     * @return 总服务天数
+     */
+    int calculateTotalServiceDaysByWechatId(@Param("wechatId") String wechatId);
+    
+    /**
+     * 计算指定微信用户的总打卡次数
+     * 
+     * @param wechatId 微信ID
+     * @return 用户总打卡次数
+     */
+    int calculateUserTotalCheckinCount(@Param("wechatId") String wechatId);
 }

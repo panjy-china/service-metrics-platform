@@ -226,43 +226,4 @@ public class AddressUserMappingController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
-    /**
-     * 测试地址处理功能
-     * 
-     * @return 处理结果
-     */
-    @GetMapping("/test-address-processing")
-    public ResponseEntity<Map<String, Object>> testAddressProcessing() {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            // 查询前几条地址记录用于测试
-            List<WechatMessageAnalyzeAddress> testRecords = addressMapper.selectAll(0, 5);
-            
-            List<Map<String, String>> processedAddresses = new ArrayList<>();
-            for (WechatMessageAnalyzeAddress record : testRecords) {
-                Map<String, String> addressInfo = new HashMap<>();
-                addressInfo.put("originalAddress", record.getAddress()); // 这里的地址已经被AddressTypeHandler处理过了
-                addressInfo.put("wechatId", record.getWechatId());
-                addressInfo.put("isValid", String.valueOf(isValidAddress(record.getAddress())));
-                processedAddresses.add(addressInfo);
-            }
-            
-            response.put("success", true);
-            response.put("processedAddresses", processedAddresses);
-            response.put("message", "地址处理测试完成");
-            response.put("timestamp", System.currentTimeMillis());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("测试地址处理功能时发生错误: " + e.getMessage());
-            e.printStackTrace();
-            
-            response.put("success", false);
-            response.put("message", "测试过程中发生错误: " + e.getMessage());
-            response.put("timestamp", System.currentTimeMillis());
-            response.put("error", e.getClass().getSimpleName());
-            return ResponseEntity.status(500).body(response);
-        }
-    }
 }

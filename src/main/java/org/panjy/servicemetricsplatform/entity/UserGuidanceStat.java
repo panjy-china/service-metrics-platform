@@ -40,6 +40,12 @@ public class UserGuidanceStat {
         this.personalizedGuidanceCount = personalizedGuidanceCount;
     }
 
+    // 用于总次数的构造函数
+    public UserGuidanceStat(Integer guidanceCount, Integer personalizedGuidanceCount) {
+        this.guidanceCount = guidanceCount;
+        this.personalizedGuidanceCount = personalizedGuidanceCount;
+    }
+
     // Getter方法
     public LocalDate getCreateTime() {
         return createTime;

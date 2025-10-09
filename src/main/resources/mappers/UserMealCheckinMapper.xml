@@ -47,4 +47,31 @@
         </foreach>
     </insert>
     
+    <!-- 计算总打卡次数（所有记录的早中晚打卡次数之和） -->
+    <select id="calculateTotalCheckinCount" resultType="int">
+        SELECT 
+            SUM(breakfast_checked + lunch_checked + dinner_checked) AS total_checkin_count
+        FROM aikang.user_meal_checkin
+    </select>
+    
+    <!-- 计算指定微信用户的总服务天数 -->
+    <select id="calculateTotalServiceDaysByWechatId" parameterType="string" resultType="int">
+        SELECT 
+            COUNT(*) AS total_service_days
+        FROM (
+            SELECT DISTINCT checkin_date
+            FROM aikang.user_meal_checkin
+            WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+              AND (breakfast_checked = 1 OR lunch_checked = 1 OR dinner_checked = 1)
+        ) AS distinct_dates
+    </select>
+    
+    <!-- 计算指定微信用户的总打卡次数 -->
+    <select id="calculateUserTotalCheckinCount" parameterType="string" resultType="int">
+        SELECT 
+            SUM(breakfast_checked + lunch_checked + dinner_checked) AS user_total_checkin_count
+        FROM aikang.user_meal_checkin
+        WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
+    </select>
+    
 </mapper>

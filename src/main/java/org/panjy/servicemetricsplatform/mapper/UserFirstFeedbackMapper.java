@@ -17,6 +17,12 @@ public interface UserFirstFeedbackMapper {
     List<UserFirstFeedback> selectBatch(@Param("wechatId") String wechatId);
     
     /**
+     * 查询所有用户首次反馈
+     * @return 所有用户首次反馈列表
+     */
+    List<UserFirstFeedback> selectAll();
+    
+    /**
      * 单次插入用户首次反馈
      * @param feedback 用户首次反馈
      * @return 插入记录数

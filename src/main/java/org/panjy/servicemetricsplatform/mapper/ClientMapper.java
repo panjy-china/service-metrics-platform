@@ -1,6 +1,7 @@
 package org.panjy.servicemetricsplatform.mapper;
 
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.panjy.servicemetricsplatform.entity.Client;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,10 @@ import java.util.Map;
  * @author System Generated
  */
 public interface ClientMapper {
+
+    @Select("SELECT DISTINCT wechat_id\n" +
+            "FROM aikang.tbl_wechat_member;\n")
+    List<String> getWechatIds();
 
     /**
      * 查询备注信息有效的客户列表

@@ -97,4 +97,74 @@ public class CallStatisticsController {
             return ResponseEntity.status(500).body(response);
         }
     }
+    
+    /**
+     * 获取所有电话时长达标率统计
+     * 
+     * @return 电话时长达标率统计列表
+     */
+    @GetMapping("/compliance-rate/all")
+    public ResponseEntity<Map<String, Object>> getAllCallDurationComplianceRates() {
+        logger.info("收到获取所有电话时长达标率统计的请求");
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<CallStatistics> statistics = callStatisticsService.calculateCallDurationComplianceRate();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", statistics);
+            
+            logger.info("成功获取电话时长达标率统计，共{}条记录", statistics.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取电话时长达标率统计时发生异常", e);
+            
+            response.put("success", false);
+            response.put("error", "查询过程中发生错误");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 根据微信ID获取电话时长达标率统计
+     * 
+     * @param wechatId 微信ID
+     * @return 电话时长达标率统计
+     */
+    @GetMapping("/compliance-rate/{wechatId}")
+    public ResponseEntity<Map<String, Object>> getCallDurationComplianceRateByWechatId(@PathVariable String wechatId) {
+        logger.info("收到根据微信ID获取电话时长达标率统计的请求，微信ID: {}", wechatId);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 检查参数
+            if (wechatId == null || wechatId.isEmpty()) {
+                logger.warn("请求参数错误，微信ID为空");
+                response.put("success", false);
+                response.put("error", "参数错误");
+                response.put("message", "微信ID不能为空");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            CallStatistics statistics = callStatisticsService.getCallDurationComplianceRateByWechatId(wechatId);
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", statistics);
+            
+            logger.info("成功获取微信ID为{}的电话时长达标率统计", wechatId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("根据微信ID获取电话时长达标率统计时发生异常，微信ID: " + wechatId, e);
+            
+            response.put("success", false);
+            response.put("error", "查询过程中发生错误");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

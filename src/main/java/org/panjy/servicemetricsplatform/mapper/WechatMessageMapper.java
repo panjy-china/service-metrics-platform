@@ -3,6 +3,7 @@ package org.panjy.servicemetricsplatform.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.Conversation;
+import org.panjy.servicemetricsplatform.entity.Message;
 
 import java.util.Date;
 import java.util.List;
@@ -43,4 +44,18 @@ public interface WechatMessageMapper {
      * @return 对话记录
      */
     Conversation findConversationsWithinTwoDaysOfFirstChatByWechatId(@Param("wechatId") String wechatId);
+    
+    /**
+     * 根据微信ID查询用户最早的一条消息记录
+     * @param wechatId 用户微信ID
+     * @return 最早的消息记录
+     */
+    Message findEarliestMessageByWechatId(@Param("wechatId") String wechatId);
+    
+    /**
+     * 根据微信ID查询用户最晚的一条消息记录
+     * @param wechatId 用户微信ID
+     * @return 最晚的消息记录
+     */
+    Message findLatestMessageByWechatId(@Param("wechatId") String wechatId);
 }

@@ -3,6 +3,7 @@ package org.panjy.servicemetricsplatform.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.panjy.servicemetricsplatform.entity.CallStatistics;
+//import org.panjy.servicemetricsplatform.entity.CallDurationStatistics;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ public interface TblTjInCallMapper {
      */
     @Select({
         "SELECT",
-        "    m.wechat_id,",
+        "    m.wechat_id AS wechatId,",
         "    countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 60) AS total_calls,",
         "    countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 900) AS long_calls",
         "FROM aikang.Tbl_Tj_InCall c",
@@ -46,4 +47,38 @@ public interface TblTjInCallMapper {
         "ORDER BY total_calls DESC"
     })
     List<CallStatistics> selectInCallStatistics();
+    
+    /**
+     * 查询InCall表中时长超过60秒和超过5分钟的通话统计
+     * 对应SQL:
+     * SELECT
+     *     m.wechat_id,
+     *     countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 60) AS calls_over_60s,
+     *     countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 300) AS calls_over_300s
+     * FROM aikang.Tbl_Tj_InCall c
+     * INNER JOIN aikang.tbl_wechat_member m
+     *     ON c.colCltID = m.colCltID
+     * WHERE c.CDNOUTTIME IS NOT NULL
+     *   AND c.CDNINTIME IS NOT NULL
+     *   AND dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 60
+     * GROUP BY m.wechat_id
+     * ORDER BY calls_over_60s DESC;
+     * 
+     * @return 通话统计信息列表
+     */
+    @Select({
+        "SELECT",
+        "    m.wechat_id AS wechatId,",
+        "    countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 60) AS total_calls,",
+        "    countIf(dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 300) AS long_calls",
+        "FROM aikang.Tbl_Tj_InCall c",
+        "INNER JOIN aikang.tbl_wechat_member m",
+        "    ON c.colCltID = m.colCltID",
+        "WHERE c.CDNOUTTIME IS NOT NULL",
+        "  AND c.CDNINTIME IS NOT NULL",
+        "  AND dateDiff('second', c.DNANSTIME, c.DNOUTTIME) >= 60",
+        "GROUP BY m.wechat_id",
+        "ORDER BY total_calls DESC"
+    })
+    List<CallStatistics> selectInCallStatisticsOver60sAnd300s();
 }

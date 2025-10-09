@@ -1880,6 +1880,123 @@ public class LLMAnalysisService {
         }
     }
 
+    /**
+     * 使用大模型分析饮食指导触达情况
+     * 当客服对用户进行饮食信息的指导时看作一次指导次数
+     * 若该指导字数超过15字则认为是一次个性化饮食指导
+     * @param conversation 对话记录对象
+     * @return UserGuidanceStat对象，包含指导次数和个性化指导次数
+     */
+    public UserGuidanceStat analyzeDietaryGuidance(Conversation conversation) throws Exception {
+        logger.info("开始分析饮食指导触达情况，用户微信ID: {}", conversation.getWechatId());
+        
+        try {
+            // 构建分析提示
+            StringBuilder analysisPrompt = new StringBuilder();
+            analysisPrompt.append("请分析以下客服与用户的对话记录，统计客服对用户进行饮食指导的次数：\n\n");
+            analysisPrompt.append("分析要求：\n");
+            analysisPrompt.append("1. 当客服对用户进行饮食信息的指导时看作一次指导次数\n");
+            analysisPrompt.append("2. 若该指导字数超过15字则认为是一次个性化饮食指导\n");
+            analysisPrompt.append("3. 请严格按照以下JSON格式返回分析结果：\n");
+            analysisPrompt.append("{\n");
+            analysisPrompt.append("  \"guidanceCount\": 指导次数,\n");
+            analysisPrompt.append("  \"personalizedGuidanceCount\": 个性化指导次数,\n");
+            analysisPrompt.append("  \"analysis\": \"详细分析说明\"\n");
+            analysisPrompt.append("}\n\n");
+            analysisPrompt.append("对话记录：\n");
+
+            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            analysisPrompt.append("# ").append(conversation.getWechatId()).append(" ").append(conversation.getDate()).append('\n');
+            conversation.getMessages().forEach(m -> analysisPrompt
+                    .append('[').append(m.getChatTime() == null ? "" : m.getChatTime().format(dtf)).append("] ")
+                    .append(m.getSender()).append(": ")
+                    .append(m.getMessage())
+                    .append('\n'));
+            logger.info("分析提示构建完成，用户微信ID: {}，提示长度: {}", conversation.getWechatId(), analysisPrompt.length());
+
+            // 调用大模型进行分析
+            String payload = "{\n" +
+                    "  \"model\": \"" + QWEN_MODEL + "\",\n" +
+                    "  \"messages\": [\n" +
+                    "    {\"role\": \"system\", \"content\": \"你是专业的客服对话分析师，擅长统计客服对用户的饮食指导次数。请严格按照指定的JSON格式返回分析结果。\"},\n" +
+                    "    {\"role\": \"user\", \"content\": " + jsonEscape(analysisPrompt.toString()) + "}\n" +
+                    "  ]\n" +
+                    "}";
+
+            String apiKey = apiKeyProp.trim();
+            if (apiKey == null || apiKey.isBlank()) {
+                logger.error("未配置百炼 API Key，用户微信ID: {}", conversation.getWechatId());
+                throw new IllegalStateException("未配置百炼 API Key：请在 application.yml 设置 dashscope.apiKey");
+            }
+
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(QWEN_API_URL))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .timeout(java.time.Duration.ofSeconds(60))
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload, java.nio.charset.StandardCharsets.UTF_8))
+                    .build();
+
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            logger.info("正在发送HTTP请求到大模型API，用户微信ID: {}", conversation.getWechatId());
+            java.net.http.HttpResponse<String> resp = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString(java.nio.charset.StandardCharsets.UTF_8));
+            logger.info("收到HTTP响应，用户微信ID: {}，状态码: {}", conversation.getWechatId(), resp.statusCode());
+
+            if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
+                String body = resp.body();
+                logger.info("大模型API响应体长度: {}，用户微信ID: {}", body.length(), conversation.getWechatId());
+
+                // 提取响应中的content部分
+                String extractedContent = extractContentFromResponse(body);
+                logger.info("提取的响应内容长度: {}，用户微信ID: {}", extractedContent.length(), conversation.getWechatId());
+
+                // 验证返回的是否为有效JSON
+                if (isValidJson(extractedContent)) {
+                    // 如果包含代码块，进一步提取纯正JSON
+                    String cleanJson = extractJsonFromContent(extractedContent);
+                    String finalResult = (cleanJson != null && !cleanJson.isEmpty()) ? cleanJson : extractedContent;
+                    
+                    // 解析JSON结果为UserGuidanceStat对象
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(finalResult);
+                        
+                        // 创建UserGuidanceStat对象
+                        UserGuidanceStat guidanceStat = new UserGuidanceStat();
+                        guidanceStat.setWechatId(conversation.getWechatId());
+                        guidanceStat.setCreateTime(conversation.getDate() != null ? 
+                                          conversation.getDate().toLocalDate() : java.time.LocalDate.now());
+                        
+                        // 提取指导次数和个性化指导次数
+                        int guidanceCount = rootNode.get("guidanceCount") != null ? 
+                                          rootNode.get("guidanceCount").asInt() : 0;
+                        int personalizedGuidanceCount = rootNode.get("personalizedGuidanceCount") != null ? 
+                                                     rootNode.get("personalizedGuidanceCount").asInt() : 0;
+                        
+                        guidanceStat.setGuidanceCount(guidanceCount);
+                        guidanceStat.setPersonalizedGuidanceCount(personalizedGuidanceCount);
+                        
+                        logger.info("大模型分析完成，用户微信ID: {}，指导次数: {}，个性化指导次数: {}", 
+                                   conversation.getWechatId(), guidanceCount, personalizedGuidanceCount);
+                        return guidanceStat;
+                    } catch (Exception e) {
+                        logger.error("解析大模型返回的JSON时发生异常，用户微信ID: " + conversation.getWechatId(), e);
+                        throw new RuntimeException("解析分析结果失败", e);
+                    }
+                } else {
+                    logger.warn("AI返回格式错误，用户微信ID: {}，原始响应长度: {}", conversation.getWechatId(), extractedContent.length());
+                    throw new RuntimeException("AI返回格式错误");
+                }
+            } else {
+                logger.error("Qwen API 调用失败，用户微信ID: {}，状态码: {}，响应体长度: {}", conversation.getWechatId(), resp.statusCode(), resp.body().length());
+                throw new RuntimeException("Qwen API 调用失败: status=" + resp.statusCode() + ", body_length=" + resp.body().length());
+            }
+        } catch (Exception e) {
+            logger.error("分析饮食指导触达情况时发生异常，用户微信ID: " + conversation.getWechatId(), e);
+            throw e;
+        }
+    }
+
     public String analyzeBodyPhotos(String wechatId) throws Exception {
         logger.info("开始分析用户舌苔和体型照片，用户微信ID: {}", wechatId);
 

@@ -36,6 +36,21 @@
         ORDER BY create_time DESC
     </select>
     
+    <!-- 查询所有用户首次反馈 -->
+    <select id="selectAll" resultMap="UserFirstFeedbackMap">
+        SELECT 
+            id,
+            wechat_id,
+            photo_count,
+            has_tongue_photo,
+            has_body_type_photo,
+            customer_service_requested,
+            analysis,
+            create_time
+        FROM user_first_feedback
+        ORDER BY create_time DESC
+    </select>
+    
     <!-- 单次插入用户首次反馈 -->
     <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
         INSERT INTO user_first_feedback (
