@@ -74,4 +74,19 @@
         WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
     </select>
     
+    <!-- 计算有体重反馈的记录数 -->
+    <select id="calculateWeightFeedbackCount" resultType="int">
+        SELECT 
+            COUNT(*) AS weight_feedback_count
+        FROM aikang.user_meal_checkin
+        WHERE has_weight_feedback = 1
+    </select>
+    
+    <!-- 计算总记录数 -->
+    <select id="calculateTotalRecords" resultType="int">
+        SELECT 
+            COUNT(*) AS total_records
+        FROM aikang.user_meal_checkin
+    </select>
+    
 </mapper>

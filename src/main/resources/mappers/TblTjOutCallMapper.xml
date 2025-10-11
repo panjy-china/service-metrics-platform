@@ -105,4 +105,11 @@
         TRUNCATE TABLE aikang.user_call_count
     </delete>
     
+    <!-- 查询所有用户的通话次数列表（仅包含通话次数，不包含用户ID） -->
+    <select id="selectAllCallCounts" resultType="java.lang.Integer">
+        SELECT call_count
+        FROM aikang.user_call_count
+        ORDER BY call_count DESC
+    </select>
+    
 </mapper>

@@ -51,4 +51,18 @@ public interface UserMealCheckinMapper {
      * @return 用户总打卡次数
      */
     int calculateUserTotalCheckinCount(@Param("wechatId") String wechatId);
+    
+    /**
+     * 计算有体重反馈的记录数
+     * 
+     * @return 有体重反馈的记录数
+     */
+    int calculateWeightFeedbackCount();
+    
+    /**
+     * 计算总记录数
+     * 
+     * @return 总记录数
+     */
+    int calculateTotalRecords();
 }

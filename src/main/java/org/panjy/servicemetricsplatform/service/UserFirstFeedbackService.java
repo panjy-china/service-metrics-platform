@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserFirstFeedbackService {
@@ -97,5 +98,50 @@ public class UserFirstFeedbackService {
                 .count();
         
         return new long[]{bodyTypePhotoCount, totalCount};
+    }
+    
+    /**
+     * 计算基础资料提交率
+     * @return 基础资料提交率，格式为百分比字符串
+     */
+    public String calculateBasicInfoSubmissionRate() {
+        Map<String, Object> stats = userFirstFeedbackMapper.selectBasicInfoSubmissionStats();
+        
+        if (stats == null || stats.isEmpty()) {
+            return "0.00%";
+        }
+        
+        // 处理ClickHouse返回的UnsignedLong类型
+        Number feedbackNums = (Number) stats.get("feedback_nums");
+        Number totalRecords = (Number) stats.get("total_records");
+        
+        if (totalRecords == null || totalRecords.longValue() == 0) {
+            return "0.00%";
+        }
+        
+        double rate = (double) feedbackNums.longValue() / totalRecords.longValue() * 100;
+        return String.format("%.2f%%", rate);
+    }
+    
+    /**
+     * 获取基础资料提交统计信息
+     * @return 包含反馈数量和总记录数的数组，[反馈数, 总数]
+     */
+    public long[] getBasicInfoSubmissionStats() {
+        Map<String, Object> stats = userFirstFeedbackMapper.selectBasicInfoSubmissionStats();
+        
+        if (stats == null || stats.isEmpty()) {
+            return new long[]{0, 0};
+        }
+        
+        // 处理ClickHouse返回的UnsignedLong类型
+        Number feedbackNums = (Number) stats.get("feedback_nums");
+        Number totalRecords = (Number) stats.get("total_records");
+        
+        if (feedbackNums == null || totalRecords == null) {
+            return new long[]{0, 0};
+        }
+        
+        return new long[]{feedbackNums.longValue(), totalRecords.longValue()};
     }
 }

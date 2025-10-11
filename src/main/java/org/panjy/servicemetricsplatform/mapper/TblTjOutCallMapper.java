@@ -2,6 +2,7 @@ package org.panjy.servicemetricsplatform.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.panjy.servicemetricsplatform.entity.TblTjOutCall;
 import org.panjy.servicemetricsplatform.entity.FirstCallSummary;
 
@@ -74,6 +75,36 @@ public interface TblTjOutCallMapper {
     Integer selectCallCountByUserId(@Param("userId") String userId);
     
     /**
+     * 查询所有用户的通话次数统计
+     * 对应SQL:
+     * SELECT 
+     *     m.wechat_id,
+     *     count(*) AS total_calls
+     * FROM aikang.Tbl_Tj_OutCall o
+     * INNER JOIN aikang.tbl_wechat_member m
+     *     ON o.colCltID = m.colCltID
+     * WHERE o.DNOUTTIME IS NOT NULL
+     *   AND o.DNINTIME IS NOT NULL
+     * GROUP BY m.wechat_id
+     * ORDER BY total_calls DESC;
+     * 
+     * @return 用户通话次数统计列表
+     */
+    @Select({
+        "SELECT",
+        "    m.wechat_id AS wechatId,",
+        "    count(*) AS total_calls",
+        "FROM aikang.Tbl_Tj_OutCall o",
+        "INNER JOIN aikang.tbl_wechat_member m",
+        "    ON o.colCltID = m.colCltID",
+        "WHERE o.DNOUTTIME IS NOT NULL",
+        "  AND o.DNINTIME IS NOT NULL",
+        "GROUP BY m.wechat_id",
+        "ORDER BY total_calls DESC"
+    })
+    List<Map<String, Object>> selectAllUserCallCounts();
+    
+    /**
      * 批量插入用户通话次数统计
      * 
      * @param userCallCounts 用户通话次数统计列表
@@ -87,4 +118,15 @@ public interface TblTjOutCallMapper {
      * @return 受影响的行数
      */
     int truncateUserCallCount();
+    
+    /**
+     * 查询所有用户的通话次数列表（仅包含通话次数，不包含用户ID）
+     * 对应SQL:
+     * SELECT call_count
+     * FROM aikang.user_call_count
+     * ORDER BY call_count DESC;
+     * 
+     * @return 通话次数列表
+     */
+    List<Integer> selectAllCallCounts();
 }

@@ -65,4 +65,50 @@ public class UserMealCheckinService {
     public int calculateUserTotalCheckinCount(String wechatId) {
         return userMealCheckinMapper.calculateUserTotalCheckinCount(wechatId);
     }
+    
+    /**
+     * 计算所有用户三餐打卡率
+     * 
+     * @return 所有用户三餐打卡率，格式为百分比字符串
+     */
+    public String calculateAllUsersMealCheckinRate() {
+        int totalCheckinCount = userMealCheckinMapper.calculateTotalCheckinCount();
+        int totalRecords = userMealCheckinMapper.calculateTotalRecords();
+        
+        if (totalRecords == 0) {
+            return "0.00%";
+        }
+        
+        double rate = (double) totalCheckinCount / totalRecords * 100;
+        return String.format("%.2f%%", rate);
+    }
+    
+    /**
+     * 计算体重反馈完成率
+     * 
+     * @return 体重反馈完成率，格式为百分比字符串
+     */
+    public String calculateWeightFeedbackCompletionRate() {
+        int weightFeedbackCount = userMealCheckinMapper.calculateWeightFeedbackCount();
+        int totalRecords = userMealCheckinMapper.calculateTotalRecords();
+        
+        if (totalRecords == 0) {
+            return "0.00%";
+        }
+        
+        double rate = (double) weightFeedbackCount / totalRecords * 100;
+        return String.format("%.2f%%", rate);
+    }
+    
+    /**
+     * 获取体重反馈统计信息
+     * 
+     * @return 包含有体重反馈记录数和总记录数的数组，[有体重反馈数, 总数]
+     */
+    public int[] getWeightFeedbackStats() {
+        int weightFeedbackCount = userMealCheckinMapper.calculateWeightFeedbackCount();
+        int totalRecords = userMealCheckinMapper.calculateTotalRecords();
+        
+        return new int[]{weightFeedbackCount, totalRecords};
+    }
 }

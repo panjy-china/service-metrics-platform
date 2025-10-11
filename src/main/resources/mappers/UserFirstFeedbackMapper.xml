@@ -27,7 +27,7 @@
             customer_service_requested,
             analysis,
             create_time
-        FROM user_first_feedback
+        FROM aikang.user_first_feedback
         <where>
             <if test="wechatId != null and wechatId != ''">
                 wechat_id = #{wechatId}
@@ -47,13 +47,13 @@
             customer_service_requested,
             analysis,
             create_time
-        FROM user_first_feedback
+        FROM aikang.user_first_feedback
         ORDER BY create_time DESC
     </select>
     
     <!-- 单次插入用户首次反馈 -->
     <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
-        INSERT INTO user_first_feedback (
+        INSERT INTO aikang.user_first_feedback (
             wechat_id,
             photo_count,
             has_tongue_photo,
@@ -71,5 +71,13 @@
             #{createTime, jdbcType=TIMESTAMP, javaType=java.time.LocalDateTime}
         )
     </insert>
+    
+    <!-- 查询基础资料提交统计信息 -->
+    <select id="selectBasicInfoSubmissionStats" resultType="map">
+        SELECT 
+            SUM(has_tongue_photo + has_body_type_photo) AS feedback_nums,
+            COUNT(*) AS total_records
+        FROM aikang.user_first_feedback
+    </select>
     
 </mapper>

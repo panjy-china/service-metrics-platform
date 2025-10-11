@@ -155,4 +155,48 @@ public class UserFirstFeedbackController {
         
         return ResponseEntity.ok(response);
     }
+    
+    /**
+     * 获取基础资料提交统计信息
+     * @return 包含反馈数量和总记录数的数组，[反馈数, 总数]
+     */
+    @GetMapping("/basic-info-stats")
+    public ResponseEntity<Map<String, Object>> getBasicInfoSubmissionStats() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            long[] stats = userFirstFeedbackService.getBasicInfoSubmissionStats();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", stats);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 获取基础资料提交率
+     * @return 基础资料提交率，格式为百分比字符串
+     */
+    @GetMapping("/basic-info-rate")
+    public ResponseEntity<Map<String, Object>> getBasicInfoSubmissionRate() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String rate = userFirstFeedbackService.calculateBasicInfoSubmissionRate();
+            
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", rate);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
 }

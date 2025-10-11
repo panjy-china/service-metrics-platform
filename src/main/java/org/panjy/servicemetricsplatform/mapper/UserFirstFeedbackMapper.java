@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.UserFirstFeedback;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface UserFirstFeedbackMapper {
@@ -28,4 +29,10 @@ public interface UserFirstFeedbackMapper {
      * @return 插入记录数
      */
     int insert(UserFirstFeedback feedback);
+    
+    /**
+     * 查询基础资料提交统计信息
+     * @return 包含反馈数量和总记录数的Map
+     */
+    Map<String, Object> selectBasicInfoSubmissionStats();
 }

@@ -142,4 +142,28 @@ public class MealCheckinRateController {
     public Map<String, Object> calculateAllUsersCheckinRate() {
         return mealCheckinRateService.calculateAllUsersCheckinRate();
     }
+    
+    /**
+     * 获取体重反馈完成率
+     * 
+     * @return 体重反馈完成率，格式为百分比字符串
+     */
+    @GetMapping("/weight-feedback-rate")
+    public Map<String, Object> getWeightFeedbackCompletionRate() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            String rate = userMealCheckinService.calculateWeightFeedbackCompletionRate();
+            
+            result.put("success", true);
+            result.put("message", "查询成功");
+            result.put("data", rate);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "查询过程中发生错误: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    
 }

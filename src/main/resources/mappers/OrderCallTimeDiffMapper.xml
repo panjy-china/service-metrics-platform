@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.OrderCallTimeDiffMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.OrderCallTimeDiff">
+        <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
+        <result column="first_order_time" jdbcType="TIMESTAMP" property="firstOrderTime" />
+        <result column="first_call_date" jdbcType="TIMESTAMP" property="firstCallDate" />
+        <result column="diff_days" jdbcType="BIGINT" property="diffSeconds" />
+    </resultMap>
+    
+    <!-- 查询所有客户的订单与首电时间差信息 -->
+    <select id="selectAllOrderCallTimeDiffs" resultMap="BaseResultMap">
+        SELECT
+            o.colCltID,
+            MIN(o.colOdrTim) AS first_order_time,
+            f.first_call_date,
+            dateDiff('second', MIN(o.colOdrTim), f.first_call_date) AS diff_days
+        FROM aikang.tbl_Order AS o
+        INNER JOIN aikang.tbl_first_call_summary AS f
+            ON o.colCltID = f.colCltID
+        GROUP BY
+            o.colCltID,
+            f.first_call_date
+        ORDER BY
+            diff_days ASC
+    </select>
+    
+</mapper>
