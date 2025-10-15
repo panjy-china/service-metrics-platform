@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -61,6 +62,13 @@ public interface WechatMessageAnalyzeAddressMapper {
     List<WechatMessageAnalyzeAddress> selectByWechatIdAndTimeRange(@Param("wechatId") String wechatId,
                                                                    @Param("startTime") Long startTime,
                                                                    @Param("endTime") Long endTime);
+    
+    /**
+     * 查询昨天新增的记录
+     * @param yesterday 昨天的日期
+     * @return 查询结果列表
+     */
+    List<WechatMessageAnalyzeAddress> selectByYesterday(@Param("yesterday") Date yesterday);
     
     /**
      * 根据微信ID和时间更新记录

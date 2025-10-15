@@ -75,6 +75,15 @@
         ORDER BY wechat_time DESC
     </select>
     
+    <!-- 查询昨天新增的记录 -->
+    <select id="selectByYesterday" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM wechat_message_a_analyze_address
+        WHERE DATE(FROM_UNIXTIME(wechat_time/1000)) = DATE(#{yesterday})
+        ORDER BY wechat_time DESC
+    </select>
+    
     <!-- 联表查询：获取wechat_member和wechat_message_a_analyze_address中同时存在的wxid与处理后的地址 -->
     <select id="selectCommonWxidWithProcessedAddress" resultType="java.util.Map">
         SELECT 
