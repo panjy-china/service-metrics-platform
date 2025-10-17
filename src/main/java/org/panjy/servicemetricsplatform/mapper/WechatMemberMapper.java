@@ -66,4 +66,10 @@ public interface WechatMemberMapper {
      * @return 存在的记录数量
      */
     int countByWechatId(@Param("wechatId") String wechatId);
+    
+    /**
+     * 统计不同客户ID的数量
+     * @return 不同客户ID的数量
+     */
+    int countDistinctColCltID();
 }

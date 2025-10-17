@@ -83,4 +83,10 @@
         WHERE wechat_id = #{wechatId,jdbcType=VARCHAR}
     </select>
     
+    <!-- 统计不同客户ID的数量 -->
+    <select id="countDistinctColCltID" resultType="java.lang.Integer">
+        SELECT COUNT(distinct colCltID) 
+        FROM aikang.tbl_wechat_member
+    </select>
+    
 </mapper>

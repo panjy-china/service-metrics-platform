@@ -1,6 +1,7 @@
 package org.panjy.servicemetricsplatform.service;
 
 import org.panjy.servicemetricsplatform.entity.ServerTime;
+import org.panjy.servicemetricsplatform.entity.OrderRetentionRate;
 import org.panjy.servicemetricsplatform.mapper.ServerTimeMapper;
 import org.panjy.servicemetricsplatform.mapper.OrderMapper;
 import org.slf4j.Logger;
@@ -127,6 +128,23 @@ public class ServerTimeService {
         } catch (Exception e) {
             logger.error("查询所有客户的服务时间记录失败", e);
             return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * 计算推单三日留存率
+     * 
+     * @return 留存率数据
+     */
+    public OrderRetentionRate calculateOrderRetentionRate() {
+        try {
+            logger.info("开始计算推单三日留存率");
+            OrderRetentionRate retentionRate = serverTimeMapper.calculateOrderRetentionRate();
+            logger.info("推单三日留存率计算完成: {}", retentionRate);
+            return retentionRate;
+        } catch (Exception e) {
+            logger.error("计算推单三日留存率失败", e);
+            return new OrderRetentionRate(0L, 0L, 0.0);
         }
     }
 }

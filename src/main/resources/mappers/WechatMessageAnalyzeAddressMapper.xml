@@ -80,7 +80,7 @@
         SELECT 
         <include refid="Base_Column_List" />
         FROM wechat_message_a_analyze_address
-        WHERE DATE(FROM_UNIXTIME(wechat_time/1000)) = DATE(#{yesterday})
+        WHERE DATE(FROM_UNIXTIME(intDiv(wechat_time, 1000))) = DATE(#{yesterday})
         ORDER BY wechat_time DESC
     </select>
     

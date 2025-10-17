@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.FriendFirstChatMapper">
+    
+    <!-- 查询指定时间范围内的用户微信ID列表 -->
+    <select id="selectFriendWechatIdsByTimeRange" resultType="string">
+        SELECT DISTINCT friend_wechat_id
+        FROM aikang.friend_first_chat
+        WHERE first_chat_time &gt;= #{startTime,jdbcType=TIMESTAMP}
+          AND first_chat_time &lt;= #{endTime,jdbcType=TIMESTAMP}
+        ORDER BY friend_wechat_id
+    </select>
+    
+</mapper>

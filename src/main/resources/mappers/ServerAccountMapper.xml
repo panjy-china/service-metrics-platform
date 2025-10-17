@@ -7,17 +7,19 @@
     <resultMap id="ServerAccountResultMap" type="org.panjy.servicemetricsplatform.entity.ServerAccount">
         <result column="id" property="id"/>
         <result column="account_code" property="accountCode"/>
+        <result column="account_name" property="accountName"/>
     </resultMap>
 
     <!-- 批量插入服务器账户记录 -->
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO aikang.tbl_server_account (
-            id, account_code
+            id, account_code, account_name
         ) VALUES
         <foreach collection="records" item="record" separator=",">
             (
                 #{record.id},
-                #{record.accountCode}
+                #{record.accountCode},
+                #{record.accountName}
             )
         </foreach>
     </insert>
@@ -26,7 +28,8 @@
     <select id="batchSelectAll" resultMap="ServerAccountResultMap">
         SELECT 
             id,
-            account_code
+            account_code,
+            account_name
         FROM aikang.tbl_server_account
     </select>
 

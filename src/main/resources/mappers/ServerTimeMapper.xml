@@ -10,6 +10,13 @@
         <result column="createTime" property="createTime"/>
         <result column="updateTime" property="updateTime"/>
     </resultMap>
+    
+    <!-- OrderRetentionRate Result Map -->
+    <resultMap id="OrderRetentionRateResultMap" type="org.panjy.servicemetricsplatform.entity.OrderRetentionRate">
+        <result column="over_10_days_users" property="over10DaysUsers"/>
+        <result column="over_13_days_users" property="over13DaysUsers"/>
+        <result column="retention_rate" property="retentionRate"/>
+    </resultMap>
 
     <!-- 插入或更新服务时间记录 -->
     <insert id="insertOrUpdate" parameterType="org.panjy.servicemetricsplatform.entity.ServerTime">
@@ -46,6 +53,17 @@
         SELECT colCltID, colSerTi, createTime, updateTime
         FROM aikang.tbl_ServerTime
         WHERE colCltID = #{clientId}
+    </select>
+    
+    <!-- 计算推单三日留存率 -->
+    <select id="calculateOrderRetentionRate" resultMap="OrderRetentionRateResultMap">
+        SELECT
+            countDistinctIf(colCltID, colSerTi > 864000) AS over_10_days_users,
+            countDistinctIf(colCltID, colSerTi > 1123200) AS over_13_days_users,
+            if(countDistinctIf(colCltID, colSerTi > 864000) > 0, 
+               round(countDistinctIf(colCltID, colSerTi > 1123200) / countDistinctIf(colCltID, colSerTi > 864000), 4), 
+               0) AS retention_rate
+        FROM aikang.tbl_ServerTime
     </select>
 
 </mapper>

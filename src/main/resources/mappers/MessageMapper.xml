@@ -26,10 +26,10 @@
             content             AS message,
             wechat_id           AS sender,
             msg_type            AS messageType,
-            FROM_UNIXTIME(wechat_time / 1000)  AS chatTime,
-            DATE(FROM_UNIXTIME(wechat_time / 1000)) AS conversationDate
+            FROM_UNIXTIME(intDiv(wechat_time, 1000))  AS chatTime,
+            DATE(FROM_UNIXTIME(intDiv(wechat_time, 1000))) AS conversationDate
         FROM wechat_messages_a
-        WHERE DATE (FROM_UNIXTIME(wechat_time / 1000)) BETWEEN #{date} AND DATE_ADD(#{date}, INTERVAL 1 DAY) - INTERVAL 1 SECOND
+        WHERE DATE (FROM_UNIXTIME(intDiv(wechat_time, 1000))) BETWEEN parseDateTimeBestEffort(#{date,jdbcType=TIMESTAMP}) AND DATE_ADD(parseDateTimeBestEffort(#{date,jdbcType=TIMESTAMP}), INTERVAL 1 DAY) - INTERVAL 1 SECOND
           AND content NOT LIKE '%你通过群发助手%'
           AND content NOT LIKE '%你已添加了%'
           AND CHAR_LENGTH(content) > 10        -- 字数大于 10
@@ -42,9 +42,9 @@
             wechat_id           AS sender,
             content             AS message,
             msg_type            AS messageType,
-            FROM_UNIXTIME(wechat_time / 1000)  AS chatTime
+            FROM_UNIXTIME(intDiv(wechat_time, 1000))  AS chatTime
         FROM wechat_messages_a
-        WHERE FROM_UNIXTIME(wechat_time / 1000) >= #{date}
+        WHERE FROM_UNIXTIME(intDiv(wechat_time, 1000)) >= parseDateTimeBestEffort(#{date,jdbcType=TIMESTAMP})
           AND (
               content LIKE '%省%' OR
               content LIKE '%市%' OR

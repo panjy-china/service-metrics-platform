@@ -1,6 +1,7 @@
 package org.panjy.servicemetricsplatform.controller;
 
 import org.panjy.servicemetricsplatform.entity.OrderCallTimeDiff;
+import org.panjy.servicemetricsplatform.entity.PersonalizedGuidanceCompletionRate;
 import org.panjy.servicemetricsplatform.service.OrderCallTimeDiffService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,42 @@ public class OrderCallTimeDiffController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("获取首电完成平均用时时发生异常: " + e.getMessage());
+            e.printStackTrace();
+
+            response.put("success", false);
+            response.put("message", "查询过程中发生错误");
+            response.put("error", e.getMessage());
+            response.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 获取个性化中医指导完成率
+     *
+     * @return 个性化中医指导完成率
+     */
+    @GetMapping("/personalized-guidance-completion-rate")
+    public ResponseEntity<Map<String, Object>> getPersonalizedGuidanceCompletionRate() {
+        System.out.println("收到获取个性化中医指导完成率的请求");
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            BigDecimal completionRate = orderCallTimeDiffService.calculatePersonalizedGuidanceCompletionRate();
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("completionRate", completionRate);
+
+            response.put("success", true);
+            response.put("message", "查询成功");
+            response.put("data", data);
+            response.put("timestamp", System.currentTimeMillis());
+
+            System.out.println("成功获取个性化中医指导完成率: " + completionRate);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("获取个性化中医指导完成率时发生异常: " + e.getMessage());
             e.printStackTrace();
 
             response.put("success", false);

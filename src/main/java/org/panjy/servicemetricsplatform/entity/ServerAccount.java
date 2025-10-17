@@ -18,4 +18,7 @@ public class ServerAccount {
     
     /** 账户代码 */
     private String accountCode;
+    
+    /** 账户名称 */
+    private String accountName;
 }

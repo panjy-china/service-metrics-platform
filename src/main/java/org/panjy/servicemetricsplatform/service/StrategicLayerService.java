@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -181,65 +182,130 @@ public class StrategicLayerService {
      * @param days         留存天数，比如 1 表示次日留存，3 表示3日留存 [3, 7, 10]
      * @return             留存率（百分比）
      */
+//    public double getRetentionRate(Date currentTime, int days) {
+//        logger.info("开始计算 {} 日留存率，观测日期: {}", days, currentTime);
+//
+//        // 1. 获取指定日期新增的用户
+//        List<String> newUsers = findNewUserByDay(currentTime);
+//        Set<String> realNewUsers = new HashSet<>(newUsers);
+//        logger.info("获取到当天新增用户数: {}", newUsers != null ? newUsers.size() : 0);
+//
+//        if (newUsers == null || newUsers.isEmpty()) {
+//            // 如果当天没有新增用户，直接返回0，避免除以0
+//            logger.info("当天无新增用户，留存率返回 0.0");
+//            return 0.0;
+//        }
+//
+//        // 2. 查询 days 天后仍然活跃的用户（私聊消息活跃）
+//        logger.info("开始查询 {} 天后仍然活跃的私聊用户", days);
+//        List<String> userServived = wechatMessageMapper.findUserServived(currentTime, days);
+//        logger.info("查询到 {} 天后仍然活跃的私聊用户数: {}", days, userServived != null ? userServived.size() : 0);
+//
+//        // 3. 查询 days 天后仍然活跃的用户（群聊消息活跃）
+//        logger.info("开始查询 {} 天后仍然活跃的群聊用户", days);
+//        List<String> groupUserServived = wechatGroupMessageMapper.findUserServived(currentTime, days);
+//        logger.info("查询到 {} 天后仍然活跃的群聊用户数: {}", days, groupUserServived != null ? groupUserServived.size() : 0);
+//
+//        // 4. 获取所有职工微信ID
+//        logger.info("开始查询所有职工微信ID");
+//        List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
+//        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
+//        Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
+//
+//        // 5. 合并群聊和私聊的活跃用户，并去除职工
+//        Set<String> activeUsers = new HashSet<>();
+//        if (groupUserServived != null) {
+//            activeUsers.addAll(groupUserServived);
+//        }
+//        activeUsers.removeAll(staffWechatSet); // 去除职工用户
+//        if (userServived != null) {
+//            activeUsers.addAll(userServived);
+//        }
+//        logger.info("合并去重后的活跃用户数（已去除职工）: {}", activeUsers.size());
+//
+//        // 6. 从新增用户中去除职工，得到真实的客户新增用户
+//        realNewUsers.removeAll(staffWechatSet);
+//        logger.info("去除职工后的实际新增客户数: {}", realNewUsers.size());
+//
+//        if (realNewUsers.isEmpty()) {
+//            // 如果去除职工后没有新增客户，返回0
+//            logger.info("去除职工后无新增客户，留存率返回 0.0");
+//            return 0.0;
+//        }
+//
+//        // 7. 计算留存用户（只统计新增客户里仍然活跃的）
+//        Set<String> retainedUsers = new HashSet<>(realNewUsers);
+//        retainedUsers.retainAll(activeUsers); // 保证 retainedUsers ⊆ realNewUsers
+//        logger.info("属于新增客户的留存用户数: {}", retainedUsers.size());
+//
+//        // 8. 留存率 = 留存用户数 ÷ 新增客户数 × 100%
+//        double retentionRate = retainedUsers.size() * 100.0 / realNewUsers.size();
+//        logger.info("{} 日留存率计算完成: {} / {} = {}%", days, retainedUsers.size(), realNewUsers.size(), retentionRate);
+//        return retentionRate;
+//    }
+
     public double getRetentionRate(Date currentTime, int days) {
-        logger.info("开始计算 {} 日留存率，观测日期: {}", days, currentTime);
-        
-        // 1. 获取指定日期新增的用户
-        List<String> newUsers = findNewUserByDay(currentTime);
-        logger.info("获取到当天新增用户数: {}", newUsers != null ? newUsers.size() : 0);
-        
-        if (newUsers == null || newUsers.isEmpty()) {
-            // 如果当天没有新增用户，直接返回0，避免除以0
-            logger.info("当天无新增用户，留存率返回 0.0");
-            return 0.0;
-        }
+        logger.info("开始统计从 {} 往前15天的每日新增与活跃用户数据（留存周期={}天）", currentTime, days);
 
-        // 2. 查询 days 天后仍然活跃的用户（私聊消息活跃）
-        logger.info("开始查询 {} 天后仍然活跃的私聊用户", days);
-        List<String> userServived = wechatMessageMapper.findUserServived(currentTime, days);
-        logger.info("查询到 {} 天后仍然活跃的私聊用户数: {}", days, userServived != null ? userServived.size() : 0);
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-        // 3. 查询 days 天后仍然活跃的用户（群聊消息活跃）
-        logger.info("开始查询 {} 天后仍然活跃的群聊用户", days);
-        List<String> groupUserServived = wechatGroupMessageMapper.findUserServived(currentTime, days);
-        logger.info("查询到 {} 天后仍然活跃的群聊用户数: {}", days, groupUserServived != null ? groupUserServived.size() : 0);
-
-        // 4. 获取所有职工微信ID
-        logger.info("开始查询所有职工微信ID");
+        // 查询职工微信ID，用于去除内部账号
         List<String> staffWechatIds = wechatAccountMapper.selectAllWechatIds();
-        logger.info("查询到职工微信ID数: {}", staffWechatIds != null ? staffWechatIds.size() : 0);
         Set<String> staffWechatSet = new HashSet<>(staffWechatIds);
 
-        // 5. 合并群聊和私聊的活跃用户，并去除职工
-        Set<String> activeUsers = new HashSet<>();
-        if (userServived != null) {
-            activeUsers.addAll(userServived);
-        }
-        if (groupUserServived != null) {
-            activeUsers.addAll(groupUserServived);
-        }
-        activeUsers.removeAll(staffWechatSet); // 去除职工用户
-        logger.info("合并去重后的活跃用户数（已去除职工）: {}", activeUsers.size());
+        // 结果集（按日期记录）
+        List<Map<String, Object>> dailyStats = new ArrayList<>();
 
-        // 6. 从新增用户中去除职工，得到真实的客户新增用户
-        Set<String> realNewUsers = new HashSet<>(newUsers);
-        realNewUsers.removeAll(staffWechatSet);
-        logger.info("去除职工后的实际新增客户数: {}", realNewUsers.size());
-        
-        if (realNewUsers.isEmpty()) {
-            // 如果去除职工后没有新增客户，返回0
-            logger.info("去除职工后无新增客户，留存率返回 0.0");
-            return 0.0;
+        // 累计总量
+        int totalNewUsers = 0;
+        int totalActiveUsers = 0;
+
+        // 遍历过去15天（含当前日期）
+        for (int i = 14; i >= 0; i--) {
+            calendar.setTime(currentTime);
+            calendar.add(Calendar.DAY_OF_MONTH, -i);
+            Date date = calendar.getTime();
+            String dateStr = sdf.format(date);
+
+            logger.info("【{}】开始统计新增与活跃用户...", dateStr);
+
+            // 1️⃣ 获取当天新增用户
+            List<String> newUsers = findNewUserByDay(date);
+            Set<String> realNewUsers = new HashSet<>(Optional.ofNullable(newUsers).orElse(Collections.emptyList()));
+            realNewUsers.removeAll(staffWechatSet);
+            int newUserCount = realNewUsers.size();
+
+            // 2️⃣ 获取当天 N 日后仍活跃用户（群聊 + 私聊）
+            List<String> privateActive = wechatMessageMapper.findUserServived(date, days);
+            List<String> groupActive = wechatGroupMessageMapper.findUserServived(date, days);
+
+            Set<String> activeUsers = new HashSet<>();
+            if (privateActive != null) activeUsers.addAll(privateActive);
+            if (groupActive != null) activeUsers.addAll(groupActive);
+            activeUsers.removeAll(staffWechatSet);
+
+            realNewUsers.retainAll(activeUsers);
+            int activeUserCount = realNewUsers.size();
+
+            // 3️⃣ 累计总数
+            totalNewUsers += newUserCount;
+            totalActiveUsers += activeUserCount;
+
+            // 4️⃣ 保存每日统计
+            Map<String, Object> dayStat = new HashMap<>();
+            dayStat.put("date", dateStr);
+            dayStat.put("newUsers", newUserCount);
+            dayStat.put("activeUsers", activeUserCount);
+            dailyStats.add(dayStat);
+
+            logger.info("日期 {}：新增 {} 用户，活跃 {} 用户", dateStr, newUserCount, activeUserCount);
         }
 
-        // 7. 计算留存用户（只统计新增客户里仍然活跃的）
-        Set<String> retainedUsers = new HashSet<>(realNewUsers);
-        retainedUsers.retainAll(activeUsers); // 保证 retainedUsers ⊆ realNewUsers
-        logger.info("属于新增客户的留存用户数: {}", retainedUsers.size());
+        // 5️⃣ 汇总结果
+        double retentionRate = totalActiveUsers * 100.0 / totalNewUsers;
+        logger.info("15天累计新增用户：{}，累计活跃用户：{}", totalNewUsers, totalActiveUsers);
 
-        // 8. 留存率 = 留存用户数 ÷ 新增客户数 × 100%
-        double retentionRate = retainedUsers.size() * 100.0 / realNewUsers.size();
-        logger.info("{} 日留存率计算完成: {} / {} = {}%", days, retainedUsers.size(), realNewUsers.size(), retentionRate);
         return retentionRate;
     }
 

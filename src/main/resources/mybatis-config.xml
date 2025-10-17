@@ -17,6 +17,7 @@
     <typeHandlers>
         <typeHandler handler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
         <typeHandler handler="org.panjy.servicemetricsplatform.util.AddressTypeHandler" javaType="string" jdbcType="LONGVARCHAR"/>
+        <typeHandler handler="org.panjy.servicemetricsplatform.util.StringArrayTypeHandler"/>
     </typeHandlers>
 
 </configuration>

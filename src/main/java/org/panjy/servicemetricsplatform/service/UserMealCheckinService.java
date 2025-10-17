@@ -79,7 +79,7 @@ public class UserMealCheckinService {
             return "0.00%";
         }
         
-        double rate = (double) totalCheckinCount / totalRecords * 100;
+        double rate = (double) totalCheckinCount / (totalRecords * 3) * 100;
         return String.format("%.2f%%", rate);
     }
     

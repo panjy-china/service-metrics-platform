@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.Order;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,6 +17,48 @@ import java.util.List;
 public interface OrderMapper {
     
     /**
+     * 查询指定日期的日下单用户数
+     * @param date 指定日期
+     * @return 下单用户数
+     */
+    Long getDailyOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一天的日下单用户数
+     * @param date 指定日期
+     * @return 前一天下单用户数
+     */
+    Long getPreviousDayOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期所在周的下单用户数
+     * @param date 指定日期
+     * @return 下单用户数
+     */
+    Long getWeeklyOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一周的下单用户数
+     * @param date 指定日期
+     * @return 前一周下单用户数
+     */
+    Long getPreviousWeekOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期所在月的下单用户数
+     * @param date 指定日期
+     * @return 下单用户数
+     */
+    Long getMonthlyOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一个月的下单用户数
+     * @param date 指定日期
+     * @return 前一个月下单用户数
+     */
+    Long getPreviousMonthOrderingUsers(@Param("date") LocalDate date);
+    
+    /**
      * 查询指定时间段的总成交额
      * @param startTime 开始时间
      * @param endTime 结束时间
@@ -23,6 +66,48 @@ public interface OrderMapper {
      */
     BigDecimal getTotalSalesAmount(@Param("startTime") String startTime, 
                                    @Param("endTime") String endTime);
+    
+    /**
+     * 查询指定日期的日销售总额
+     * @param date 指定日期
+     * @return 日销售总额
+     */
+    BigDecimal getDailySalesAmount(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一天的日销售总额
+     * @param date 指定日期
+     * @return 前一天日销售总额
+     */
+    BigDecimal getPreviousDaySalesAmount(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期所在自然周的销售总额
+     * @param date 指定日期
+     * @return 自然周销售总额
+     */
+    BigDecimal getWeeklySalesAmount(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一周的销售总额
+     * @param date 指定日期
+     * @return 前一周销售总额
+     */
+    BigDecimal getPreviousWeeklySalesAmount(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期所在自然月的销售总额
+     * @param date 指定日期
+     * @return 自然月销售总额
+     */
+    BigDecimal getMonthlySalesAmount(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定日期前一个月的销售总额
+     * @param date 指定日期
+     * @return 前一个月销售总额
+     */
+    BigDecimal getPreviousMonthlySalesAmount(@Param("date") LocalDate date);
     
     /**
      * 查询指定时间段的总成交客户数

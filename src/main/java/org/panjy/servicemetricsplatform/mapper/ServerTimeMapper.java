@@ -3,6 +3,7 @@ package org.panjy.servicemetricsplatform.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.panjy.servicemetricsplatform.entity.ServerTime;
+import org.panjy.servicemetricsplatform.entity.OrderRetentionRate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,4 +48,10 @@ public interface ServerTimeMapper {
      * @return 服务时间记录
      */
     ServerTime getByClientId(@Param("clientId") String clientId);
+    
+    /**
+     * 计算推单三日留存率数据
+     * @return 留存率数据
+     */
+    OrderRetentionRate calculateOrderRetentionRate();
 }

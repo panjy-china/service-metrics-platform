@@ -119,7 +119,7 @@ public class UserFirstFeedbackService {
             return "0.00%";
         }
         
-        double rate = (double) feedbackNums.longValue() / totalRecords.longValue() * 100;
+        double rate = (double) feedbackNums.longValue() / (totalRecords.longValue() * 2) * 100;
         return String.format("%.2f%%", rate);
     }
     

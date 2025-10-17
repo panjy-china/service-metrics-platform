@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.SalesRankingMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="SalesRankingResultMap" type="org.panjy.servicemetricsplatform.entity.SalesRanking">
+        <result property="salesCode" column="sales_code"/>
+        <result property="salesName" column="sales_name"/>
+        <result property="totalSales" column="total_sales"/>
+    </resultMap>
+    
+    <!-- 查询指定日期所在自然周的销售额排行榜 -->
+    <select id="getWeeklySalesRanking" resultMap="SalesRankingResultMap">
+        SELECT 
+            a.account_code AS sales_code,
+            a.account_name AS sales_name,
+            SUM(o.colTotal) AS total_sales
+        FROM aikang.tbl_Order o
+        INNER JOIN aikang.tbl_server_account a
+            ON o.colEmpID = a.account_code
+        WHERE o.colOdrTim >= toStartOfWeek(toDate(#{date}))
+          AND o.colOdrTim &lt; addWeeks(toStartOfWeek(toDate(#{date})), 1)
+        GROUP BY 
+            a.account_code, a.account_name
+        ORDER BY 
+            total_sales DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 查询指定日期所在自然月的销售额排行榜 -->
+    <select id="getMonthlySalesRanking" resultMap="SalesRankingResultMap">
+        SELECT 
+            a.account_code AS sales_code,
+            a.account_name AS sales_name,
+            SUM(o.colTotal) AS total_sales
+        FROM aikang.tbl_Order o
+        INNER JOIN aikang.tbl_server_account a
+            ON o.colEmpID = a.account_code
+        WHERE o.colOdrTim >= toStartOfMonth(toDate(#{date}))
+          AND o.colOdrTim &lt; addMonths(toStartOfMonth(toDate(#{date})), 1)
+        GROUP BY 
+            a.account_code, a.account_name
+        ORDER BY 
+            total_sales DESC
+        LIMIT #{limit}
+    </select>
+    
+</mapper>

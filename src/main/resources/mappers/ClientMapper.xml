@@ -96,27 +96,36 @@
     <!-- 查询年龄分布 -->
     <select id="selectAgeDistribution" resultType="java.util.Map">
         SELECT
-            CASE
-                WHEN colAge &lt; 18 THEN '未成年'
-                WHEN colAge &lt; 25 THEN '18-24岁'
-                WHEN colAge &lt; 35 THEN '25-34岁'
-                WHEN colAge &lt; 45 THEN '35-44岁'
-                WHEN colAge &lt; 55 THEN '45-54岁'
-                ELSE '55岁以上'
-            END as ageGroup,
-            COUNT(*) as count
-        FROM aikang.tbl_Client
-        WHERE colAge IS NOT NULL
+        CASE
+        WHEN c.colAge &lt; 18 THEN '未成年'
+        WHEN c.colAge &lt; 25 THEN '18-24岁'
+        WHEN c.colAge &lt; 35 THEN '25-34岁'
+        WHEN c.colAge &lt; 45 THEN '35-44岁'
+        WHEN c.colAge &lt; 55 THEN '45-54岁'
+        WHEN c.colAge &lt; 60 THEN '55-59岁'
+        WHEN c.colAge &lt; 65 THEN '60-64岁'
+        WHEN c.colAge &lt; 70 THEN '65-70岁'
+        ELSE '70岁以上'
+        END AS ageGroup,
+        COUNT(*) AS count
+        FROM aikang.tbl_Client AS c
+        INNER JOIN aikang.tbl_server_account AS s
+        ON c.colEmpID = s.account_code    -- 只保留两表重合的员工/客户归属关系
+        WHERE c.colAge IS NOT NULL
         GROUP BY ageGroup
         ORDER BY
-            CASE ageGroup
-                WHEN '未成年' THEN 1
-                WHEN '18-24岁' THEN 2
-                WHEN '25-34岁' THEN 3
-                WHEN '35-44岁' THEN 4
-                WHEN '45-54岁' THEN 5
-                ELSE 6
-            END
+        CASE ageGroup
+        WHEN '未成年' THEN 1
+        WHEN '18-24岁' THEN 2
+        WHEN '25-34岁' THEN 3
+        WHEN '35-44岁' THEN 4
+        WHEN '45-54岁' THEN 5
+        WHEN '55-59岁' THEN 6
+        WHEN '60-64岁' THEN 7
+        WHEN '65-70岁' THEN 8
+        ELSE 9
+        END;
+
     </select>
 
     <!-- 查询体重分布 -->
@@ -131,7 +140,9 @@
                 ELSE '80kg以上'
             END as weightGroup,
             COUNT(*) as count
-        FROM aikang.tbl_Client
+        FROM aikang.tbl_Client AS c
+            INNER JOIN aikang.tbl_server_account AS s
+        ON c.colEmpID = s.account_code
         WHERE colWeight IS NOT NULL
         GROUP BY weightGroup
         ORDER BY
