@@ -85,8 +85,19 @@
     
     <!-- 统计不同客户ID的数量 -->
     <select id="countDistinctColCltID" resultType="java.lang.Integer">
-        SELECT COUNT(distinct colCltID) 
-        FROM aikang.tbl_wechat_member
+        SELECT COUNT(*) AS total_customer_count
+        FROM (
+                 SELECT
+                     to2.colCltID
+                 FROM
+                     aikang.tbl_Order to2
+                 WHERE
+                     to2.colOdrTim &lt;= addDays(toDate(now()), -12)
+                 GROUP BY
+                     to2.colCltID
+                 HAVING
+                     COUNT(DISTINCT to2.colEmpID) &lt; 2
+             ) AS subquery;
     </select>
     
 </mapper>

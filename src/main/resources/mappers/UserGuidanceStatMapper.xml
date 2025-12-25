@@ -2,10 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.UserGuidanceStatMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.UserGuidanceStatMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.message.UserGuidanceStat">
         <result column="create_time" jdbcType="DATE" property="createTime" />
         <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
         <result column="guidance_count" jdbcType="INTEGER" property="guidanceCount" />
@@ -53,7 +53,7 @@
     </select>
     
     <!-- 插入用户指导统计记录 -->
-    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.message.UserGuidanceStat">
         INSERT INTO aikang.user_guidance_stat (
             create_time, wechat_id, guidance_count, personalized_guidance_count
         ) VALUES (
@@ -65,7 +65,7 @@
     </insert>
     
     <!-- 更新用户指导统计记录 -->
-    <update id="update" parameterType="org.panjy.servicemetricsplatform.entity.UserGuidanceStat">
+    <update id="update" parameterType="org.panjy.servicemetricsplatform.entity.message.UserGuidanceStat">
         UPDATE aikang.user_guidance_stat
         SET 
             guidance_count = #{guidanceCount,jdbcType=INTEGER},
@@ -80,6 +80,15 @@
             SUM(guidance_count) AS guidance_count,
             SUM(personalized_guidance_count) AS personalized_guidance_count
         FROM aikang.user_guidance_stat
+    </select>
+    
+    <!-- 获取指定月份的总指导次数和总个性化指导次数 -->
+    <select id="getTotalGuidanceCountsByMonth" parameterType="java.time.LocalDateTime" resultMap="BaseResultMap">
+        SELECT 
+            SUM(guidance_count) AS guidance_count,
+            SUM(personalized_guidance_count) AS personalized_guidance_count
+        FROM aikang.user_guidance_stat
+        WHERE toYear(create_time) = toYear(toDate(#{targetDate})) AND toMonth(create_time) = toMonth(toDate(#{targetDate}))
     </select>
     
 </mapper>

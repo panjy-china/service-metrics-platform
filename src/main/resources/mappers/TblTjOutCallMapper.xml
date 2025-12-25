@@ -2,10 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.TblTjOutCallMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.call.TblTjOutCallMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.TblTjOutCall">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.call.TblTjOutCall">
         <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
         <result column="DNISANS" jdbcType="INTEGER" property="DNISANS" />
         <result column="DNANSTIME" jdbcType="TIMESTAMP" property="DNANSTIME" />
@@ -14,14 +14,14 @@
     </resultMap>
     
     <!-- FirstCallSummary结果映射 -->
-    <resultMap id="FirstCallSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.FirstCallSummary">
+    <resultMap id="FirstCallSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.call.FirstCallSummary">
         <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
         <result column="first_call_date" jdbcType="TIMESTAMP" property="firstCallDate" />
         <result column="call_duration" jdbcType="INTEGER" property="callDuration" />
     </resultMap>
     
     <!-- CallCountSummary结果映射 -->
-    <resultMap id="CallCountSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.CallCountSummary">
+    <resultMap id="CallCountSummaryResultMap" type="org.panjy.servicemetricsplatform.entity.call.CallCountSummary">
         <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
         <result column="call_count" jdbcType="INTEGER" property="callCount" />
     </resultMap>
@@ -53,7 +53,7 @@
     </select>
     
     <!-- 插入首通电话摘要记录 -->
-    <insert id="insertFirstCallSummary" parameterType="org.panjy.servicemetricsplatform.entity.FirstCallSummary">
+    <insert id="insertFirstCallSummary" parameterType="org.panjy.servicemetricsplatform.entity.call.FirstCallSummary">
         INSERT INTO aikang.tbl_first_call_summary (
             colCltID, first_call_date, call_duration
         ) VALUES (
@@ -109,6 +109,22 @@
     <select id="selectAllCallCounts" resultType="java.lang.Integer">
         SELECT call_count
         FROM aikang.user_call_count
+        ORDER BY call_count DESC
+    </select>
+    
+    <!-- 根据指定月份查询用户的通话次数列表（基于Tbl_Tj_OutCall表中的DNINTIME字段） -->
+    <select id="selectCallCountsByMonth" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT 
+            COUNT(*) AS call_count
+        FROM aikang.Tbl_Tj_OutCall o
+        INNER JOIN aikang.tbl_wechat_member m
+            ON o.colCltID = m.colCltID
+        WHERE o.DNOUTTIME IS NOT NULL
+          AND o.DNINTIME IS NOT NULL
+          AND DATE_FORMAT(o.DNINTIME, '%Y-%m') = #{yearMonth,jdbcType=VARCHAR}
+          AND o.DNISANS = 1
+          AND (o.DNOUTTIME - o.DNANSTIME) > 60
+        GROUP BY m.wechat_id
         ORDER BY call_count DESC
     </select>
     

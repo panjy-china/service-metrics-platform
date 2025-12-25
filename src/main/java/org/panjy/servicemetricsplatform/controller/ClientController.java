@@ -1,7 +1,7 @@
 package org.panjy.servicemetricsplatform.controller;
 
-import org.panjy.servicemetricsplatform.entity.Client;
-import org.panjy.servicemetricsplatform.service.ClientService;
+import org.panjy.servicemetricsplatform.entity.age.Client;
+import org.panjy.servicemetricsplatform.service.analysis.ClientService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.label.WechatUserLabelMapper">
+
+    <resultMap id="WechatUserLabelMap" type="org.panjy.servicemetricsplatform.entity.label.WechatUserLabel">
+        <result column="wechatFriendId" property="wechatFriendId"/>
+        <result column="wechatAccountId" property="wechatAccountId"/>
+        <result column="label" property="label"/>
+        <result column="evidence" property="evidence"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 插入微信用户健康画像标签 -->
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.label.WechatUserLabel">
+        INSERT INTO aikang.wechat_user_label (
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{wechatFriendId},
+            #{wechatAccountId},
+            #{label},
+            #{evidence},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <!-- 批量插入微信用户健康画像标签 -->
+    <insert id="batchInsert">
+        INSERT INTO aikang.wechat_user_label (
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        ) VALUES
+        <foreach collection="wechatUserLabels" item="label" separator=",">
+            (
+                #{label.wechatFriendId},
+                #{label.wechatAccountId},
+                #{label.label},
+                #{label.evidence},
+                #{label.createdAt},
+                #{label.updatedAt}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据微信好友ID、销售账号ID和标签查询标签信息 -->
+    <select id="selectByWechatFriendIdAndAccountIdAndLabel" resultMap="WechatUserLabelMap">
+        SELECT 
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        FROM aikang.wechat_user_label
+        WHERE wechatFriendId = #{wechatFriendId} 
+          AND wechatAccountId = #{wechatAccountId}
+          AND label = #{label}
+    </select>
+
+    <!-- 根据微信好友ID和销售账号ID查询标签列表 -->
+    <select id="selectByWechatFriendIdAndAccountId" resultMap="WechatUserLabelMap">
+        SELECT 
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        FROM aikang.wechat_user_label
+        WHERE wechatFriendId = #{wechatFriendId} 
+          AND wechatAccountId = #{wechatAccountId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 根据微信好友ID和销售账号ID查询所有标签 -->
+    <select id="selectListByWechatFriendIdAndAccountId" resultMap="WechatUserLabelMap">
+        SELECT 
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        FROM aikang.wechat_user_label
+        WHERE wechatFriendId = #{wechatFriendId} 
+          AND wechatAccountId = #{wechatAccountId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByWechatId" resultMap="WechatUserLabelMap">
+        SELECT
+            wechatFriendId,
+            wechatAccountId,
+            label,
+            evidence,
+            created_at,
+            updated_at
+        FROM aikang.wechat_user_label
+        WHERE wechatId = #{wechatId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+</mapper>

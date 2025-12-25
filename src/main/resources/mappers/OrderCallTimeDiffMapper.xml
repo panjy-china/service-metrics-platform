@@ -2,14 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.OrderCallTimeDiffMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.call.OrderCallTimeDiffMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.OrderCallTimeDiff">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.call.OrderCallTimeDiff">
         <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
         <result column="first_order_time" jdbcType="TIMESTAMP" property="firstOrderTime" />
         <result column="first_call_date" jdbcType="TIMESTAMP" property="firstCallDate" />
-        <result column="diff_days" jdbcType="BIGINT" property="diffSeconds" />
+        <result column="diff_seconds" jdbcType="BIGINT" property="diffSeconds" />
+    </resultMap>
+    
+    <!-- PersonalizedGuidanceCompletionRate结果映射 -->
+    <resultMap id="PersonalizedGuidanceCompletionRateResultMap" type="org.panjy.servicemetricsplatform.entity.PersonalizedGuidanceCompletionRate">
+        <result column="over1MinCount" jdbcType="INTEGER" property="over1MinCount" />
+        <result column="over15MinCount" jdbcType="INTEGER" property="over15MinCount" />
     </resultMap>
     
     <!-- 查询所有客户的订单与首电时间差信息 -->
@@ -18,7 +24,7 @@
             o.colCltID,
             MIN(o.colOdrTim) AS first_order_time,
             f.first_call_date,
-            dateDiff('second', MIN(o.colOdrTim), f.first_call_date) AS diff_days
+            dateDiff('second', MIN(o.colOdrTim), f.first_call_date) AS diff_seconds
         FROM aikang.tbl_Order AS o
         INNER JOIN aikang.tbl_first_call_summary AS f
             ON o.colCltID = f.colCltID
@@ -26,7 +32,25 @@
             o.colCltID,
             f.first_call_date
         ORDER BY
-            diff_days ASC
+            diff_seconds ASC
+    </select>
+    
+    <!-- 根据指定月份查询客户的订单与首电时间差信息 -->
+    <select id="selectOrderCallTimeDiffsByMonth" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+            o.colCltID,
+            MIN(o.colOdrTim) AS first_order_time,
+            f.first_call_date,
+            dateDiff('second', MIN(o.colOdrTim), f.first_call_date) AS diff_seconds
+        FROM aikang.tbl_Order AS o
+        INNER JOIN aikang.tbl_first_call_summary AS f
+            ON o.colCltID = f.colCltID
+        WHERE DATE_FORMAT(f.first_call_date, '%Y-%m') = #{yearMonth,jdbcType=VARCHAR}
+        GROUP BY
+            o.colCltID,
+            f.first_call_date
+        ORDER BY
+            diff_seconds ASC
     </select>
     
 </mapper>

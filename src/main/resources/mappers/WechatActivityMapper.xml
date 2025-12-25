@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatActivityMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.WechatActivityMapper">
 
-    <resultMap id="WechatActivityMap" type="org.panjy.servicemetricsplatform.entity.WechatActivity">
+    <resultMap id="WechatActivityMap" type="org.panjy.servicemetricsplatform.entity.message.WechatActivity">
         <result property="wechatId" column="wechat_id"/>
         <result property="firstActivityTime" column="first_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
         <result property="lastActivityTime" column="last_activity_time" typeHandler="org.panjy.servicemetricsplatform.util.ClickHouseDateTypeHandler"/>
@@ -24,8 +24,8 @@
                  FROM aikang.wechat_message fa
                  GROUP BY fa.friend_wechat_id
              ) t
-        WHERE t.first_activity_time BETWEEN #{checkTime}
-                  AND addDays(toDateTime(#{checkTime}), 1)
+        WHERE t.first_activity_time BETWEEN toDateTime(toDate(#{checkTime}))
+                  AND addDays(toDateTime(toDate(#{checkTime})), 1)
     </select>
 
     <select id="getWechatGroupActivities" resultMap="WechatActivityMap">
@@ -41,8 +41,8 @@
                  FROM aikang.wechat_group_message fa
                  GROUP BY fa.sender
              ) t
-        WHERE t.first_activity_time BETWEEN toUnixTimestamp(#{checkTime}) * 1000
-                  AND toUnixTimestamp(addDays(toDateTime(#{checkTime}), 1)) * 1000
+        WHERE t.first_activity_time BETWEEN toInt64(toDateTime(toDate(#{checkTime}))) * 1000
+                  AND toInt64(addDays(toDateTime(toDate(#{checkTime})), 1)) * 1000
     </select>
 
 </mapper>

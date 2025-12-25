@@ -2,8 +2,9 @@ package org.panjy.servicemetricsplatform.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.panjy.servicemetricsplatform.entity.UserMealCheckin;
+import org.panjy.servicemetricsplatform.entity.mealcomletion.UserMealCheckin;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -65,4 +66,28 @@ public interface UserMealCheckinMapper {
      * @return 总记录数
      */
     int calculateTotalRecords();
+    
+    /**
+     * 计算指定月份的总打卡次数（所有记录的早中晚打卡次数之和）
+     * 
+     * @param targetDate 目标日期
+     * @return 指定月份的总打卡次数
+     */
+    int calculateTotalCheckinCountByMonth(@Param("targetDate") LocalDateTime targetDate);
+    
+    /**
+     * 计算指定月份有体重反馈的记录数
+     * 
+     * @param targetDate 目标日期
+     * @return 指定月份有体重反馈的记录数
+     */
+    int calculateWeightFeedbackCountByMonth(@Param("targetDate") LocalDateTime targetDate);
+    
+    /**
+     * 计算指定月份的总记录数
+     * 
+     * @param targetDate 目标日期
+     * @return 指定月份的总记录数
+     */
+    int calculateTotalRecordsByMonth(@Param("targetDate") LocalDateTime targetDate);
 }

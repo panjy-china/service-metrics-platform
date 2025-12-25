@@ -1,7 +1,8 @@
 package org.panjy.servicemetricsplatform.controller;
 
-import org.panjy.servicemetricsplatform.entity.UserFirstFeedback;
-import org.panjy.servicemetricsplatform.service.UserFirstFeedbackService;
+
+import org.panjy.servicemetricsplatform.entity.message.UserFirstFeedback;
+import org.panjy.servicemetricsplatform.service.message.UserFirstFeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

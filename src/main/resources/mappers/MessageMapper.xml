@@ -3,8 +3,8 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.MessageMapper">
-    <resultMap id="MessageConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.MessageMapper">
+    <resultMap id="MessageConversationResultMap" type="org.panjy.servicemetricsplatform.entity.message.Conversation">
         <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
         <id property="wechatId" column="wechatId"/>
 
@@ -12,7 +12,7 @@
         <result property="date" column="conversationDate"/>
 
         <!-- 映射 Message 列表 -->
-        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.Message">
+        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.message.Message">
             <result property="sender" column="sender"/>
             <result property="message" column="message"/>
             <result property="type" column="messageType" javaType="string"/>
@@ -35,7 +35,7 @@
           AND CHAR_LENGTH(content) > 10        -- 字数大于 10
         ORDER BY wechat_account_id, create_time ASC;
     </select>
-    <select id="findMessagesLikeAddress" resultType="org.panjy.servicemetricsplatform.entity.Message">
+    <select id="findMessagesLikeAddress" resultType="org.panjy.servicemetricsplatform.entity.message.Message">
         <!-- 模糊匹配地址 存在 省、市、县、乡、镇、村、区任意一个字即返回 -->
         <!-- 参数 date 仅查询 date 以后的数据 -->
         SELECT

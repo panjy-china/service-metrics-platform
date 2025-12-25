@@ -1,0 +1,53 @@
+package org.panjy.servicemetricsplatform.mapper.message;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.panjy.servicemetricsplatform.entity.message.UserFirstFeedback;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+@Mapper
+public interface UserFirstFeedbackMapper {
+    
+    /**
+     * 批量查询用户首次反馈
+     * @param wechatId 微信ID，可为空
+     * @return 用户首次反馈列表
+     */
+    List<UserFirstFeedback> selectBatch(@Param("wechatId") String wechatId);
+    
+    /**
+     * 查询所有用户首次反馈
+     * @return 所有用户首次反馈列表
+     */
+    List<UserFirstFeedback> selectAll();
+    
+    /**
+     * 单次插入用户首次反馈
+     * @param feedback 用户首次反馈
+     * @return 插入记录数
+     */
+    int insert(UserFirstFeedback feedback);
+    
+    /**
+     * 查询基础资料提交统计信息
+     * @return 包含反馈数量和总记录数的Map
+     */
+    Map<String, Object> selectBasicInfoSubmissionStats();
+    
+    /**
+     * 查询指定月份的基础资料提交统计信息
+     * @param targetDate 目标日期
+     * @return 包含反馈数量和总记录数的Map
+     */
+    Map<String, Object> selectBasicInfoSubmissionStatsByMonth(@Param("targetDate") LocalDateTime targetDate);
+    
+    /**
+     * 查询指定月份的用户首次反馈
+     * @param targetDate 目标日期
+     * @return 用户首次反馈列表
+     */
+    List<UserFirstFeedback> selectByMonth(@Param("targetDate") LocalDateTime targetDate);
+}

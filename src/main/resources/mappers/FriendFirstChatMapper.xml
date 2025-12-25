@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.FriendFirstChatMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.newuser.FriendFirstChatMapper">
     
     <!-- 查询指定时间范围内的用户微信ID列表 -->
     <select id="selectFriendWechatIdsByTimeRange" resultType="string">

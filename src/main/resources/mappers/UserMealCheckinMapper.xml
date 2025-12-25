@@ -5,7 +5,7 @@
 <mapper namespace="org.panjy.servicemetricsplatform.mapper.UserMealCheckinMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.UserMealCheckin">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.mealcomletion.UserMealCheckin">
         <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
         <result column="checkin_date" jdbcType="DATE" property="checkinDate" />
         <result column="breakfast_checked" jdbcType="TINYINT" property="breakfastChecked" />
@@ -87,6 +87,31 @@
         SELECT 
             COUNT(*) AS total_records
         FROM aikang.user_meal_checkin
+    </select>
+    
+    <!-- 计算指定月份的总打卡次数（所有记录的早中晚打卡次数之和） -->
+    <select id="calculateTotalCheckinCountByMonth" parameterType="java.time.LocalDateTime" resultType="int">
+        SELECT 
+            SUM(breakfast_checked + lunch_checked + dinner_checked) AS total_checkin_count
+        FROM aikang.user_meal_checkin
+        WHERE toYear(checkin_date) = toYear(toDate(#{targetDate})) AND toMonth(checkin_date) = toMonth(toDate(#{targetDate}))
+    </select>
+    
+    <!-- 计算指定月份有体重反馈的记录数 -->
+    <select id="calculateWeightFeedbackCountByMonth" parameterType="java.time.LocalDateTime" resultType="int">
+        SELECT 
+            COUNT(*) AS weight_feedback_count
+        FROM aikang.user_meal_checkin
+        WHERE has_weight_feedback = 1 
+          AND toYear(checkin_date) = toYear(toDate(#{targetDate})) AND toMonth(checkin_date) = toMonth(toDate(#{targetDate}))
+    </select>
+    
+    <!-- 计算指定月份的总记录数 -->
+    <select id="calculateTotalRecordsByMonth" parameterType="java.time.LocalDateTime" resultType="int">
+        SELECT 
+            COUNT(*) AS total_records
+        FROM aikang.user_meal_checkin
+        WHERE toYear(checkin_date) = toYear(toDate(#{targetDate})) AND toMonth(checkin_date) = toMonth(toDate(#{targetDate}))
     </select>
     
 </mapper>

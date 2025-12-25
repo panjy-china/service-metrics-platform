@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.UserFirstFeedbackMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.UserFirstFeedbackMapper">
     
-    <resultMap id="UserFirstFeedbackMap" type="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
+    <resultMap id="UserFirstFeedbackMap" type="org.panjy.servicemetricsplatform.entity.message.UserFirstFeedback">
         <id property="id" column="id"/>
         <result property="wechatId" column="wechat_id"/>
         <result property="photoCount" column="photo_count"/>
@@ -51,9 +51,25 @@
         ORDER BY create_time DESC
     </select>
     
+    <!-- 查询指定月份的用户首次反馈 -->
+    <select id="selectByMonth" resultMap="UserFirstFeedbackMap">
+        SELECT 
+            id,
+            wechat_id,
+            photo_count,
+            has_tongue_photo,
+            has_body_type_photo,
+            customer_service_requested,
+            analysis,
+            create_time
+        FROM aikang.user_first_feedback
+        WHERE toYear(create_time) = toYear(toDate(#{targetDate})) AND toMonth(create_time) = toMonth(toDate(#{targetDate}))
+        ORDER BY create_time DESC
+    </select>
+    
     <!-- 单次插入用户首次反馈 -->
-    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.UserFirstFeedback">
-        INSERT INTO aikang.user_first_feedback (
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.message.UserFirstFeedback">
+        INSERT INTO aikang.user_first_feedback_v1 (
             wechat_id,
             photo_count,
             has_tongue_photo,
@@ -78,6 +94,15 @@
             SUM(has_tongue_photo + has_body_type_photo) AS feedback_nums,
             COUNT(*) AS total_records
         FROM aikang.user_first_feedback
+    </select>
+    
+    <!-- 查询指定月份的基础资料提交统计信息 -->
+    <select id="selectBasicInfoSubmissionStatsByMonth" resultType="map">
+        SELECT 
+            SUM(has_tongue_photo + has_body_type_photo) AS feedback_nums,
+            COUNT(*) AS total_records
+        FROM aikang.user_first_feedback
+        WHERE toYear(create_time) = toYear(toDate(#{targetDate})) AND toMonth(create_time) = toMonth(toDate(#{targetDate}))
     </select>
     
 </mapper>

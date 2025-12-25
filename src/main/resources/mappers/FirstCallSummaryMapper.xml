@@ -2,10 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.FirstCallSummaryMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.call.FirstCallSummaryMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.FirstCallSummary">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.call.FirstCallSummary">
         <result column="colCltID" jdbcType="VARCHAR" property="colCltID" />
         <result column="first_call_date" jdbcType="TIMESTAMP" property="firstCallDate" />
         <result column="call_duration" jdbcType="INTEGER" property="callDuration" />
@@ -32,6 +32,14 @@
         SELECT 
         <include refid="Base_Column_List" />
         FROM aikang.tbl_first_call_summary
+    </select>
+    
+    <!-- 查询指定日期所在自然月的首通记录 -->
+    <select id="selectByMonth" parameterType="java.time.LocalDateTime" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM aikang.tbl_first_call_summary
+        WHERE toMonth(aikang.tbl_first_call_summary.first_call_date) = toMonth(toDate(#{date}))
     </select>
     
 </mapper>

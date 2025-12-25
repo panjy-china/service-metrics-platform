@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatAccountMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.WechatAccountMapper">
 
     <!-- 基础字段映射 -->
     <sql id="Base_Column_List">
@@ -17,7 +17,7 @@
     </sql>
     
     <!-- 查询所有微信账号 -->
-    <select id="selectAll" resultType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+    <select id="selectAll" resultType="org.panjy.servicemetricsplatform.entity.message.WechatAccount">
         SELECT <include refid="Base_Column_List"/>
         FROM wechat_account
         ORDER BY id DESC
@@ -29,14 +29,14 @@
     </select>
     
     <!-- 根据微信ID查询微信账号 -->
-    <select id="selectByWechatId" parameterType="string" resultType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+    <select id="selectByWechatId" parameterType="string" resultType="org.panjy.servicemetricsplatform.entity.message.WechatAccount">
         SELECT <include refid="Base_Column_List"/>
         FROM wechat_account
         WHERE wechat_id = #{wechatId}
     </select>
     
     <!-- 根据微信ID更新微信账号 -->
-    <update id="updateByWechatId" parameterType="org.panjy.servicemetricsplatform.entity.WechatAccount">
+    <update id="updateByWechatId" parameterType="org.panjy.servicemetricsplatform.entity.message.WechatAccount">
         UPDATE wechat_account
         SET 
             memo = #{memo},

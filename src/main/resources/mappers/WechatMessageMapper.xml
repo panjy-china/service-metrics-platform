@@ -3,8 +3,8 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageMapper">
-    <resultMap id="MessageResultMap" type="org.panjy.servicemetricsplatform.entity.Message">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.WechatMessageMapper">
+    <resultMap id="MessageResultMap" type="org.panjy.servicemetricsplatform.entity.message.Message">
         <constructor>
             <arg column="sender" javaType="String"/>
             <arg column="message" javaType="String"/>
@@ -13,7 +13,7 @@
         </constructor>
     </resultMap>
     
-    <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.Conversation">
+    <resultMap id="ConversationResultMap" type="org.panjy.servicemetricsplatform.entity.message.Conversation">
         <!-- Conversation 的唯一标识，按 wechatId 聚合 -->
         <id property="wechatId" column="wechatId"/>
 
@@ -21,7 +21,7 @@
         <result property="date" column="firstChatTime"/>
 
         <!-- 映射 Message 列表 -->
-        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.Message" resultMap="MessageResultMap">
+        <collection property="messages" ofType="org.panjy.servicemetricsplatform.entity.message.Message" resultMap="MessageResultMap">
         </collection>
     </resultMap>
 
@@ -65,16 +65,15 @@
                  FROM aikang.wechat_message w1
                  WHERE w1.sender = w1.friend_nickname
                  GROUP BY w1.friend_wechat_id
-                 HAVING MIN(w1.chat_time) BETWEEN toDateTime(#{startTime})
-                            AND addDays(toDateTime(#{startTime}), 1)
+                 HAVING MIN(w1.chat_time) BETWEEN toDateTime(toDate(#{startTime})) AND addDays(toDateTime(toDate(#{startTime})), 1)
              ) t
         WHERE t.wechat_id NOT IN (
             SELECT u1.friend_wechat_id AS wechat_id
             FROM aikang.wechat_message u1
             WHERE u1.sender = u1.friend_nickname
-              AND u1.chat_time &lt;= addDays(toDateTime(#{startTime}), 7)
+              AND u1.chat_time &lt;= addDays(toDateTime(toDate(#{startTime})), 7)
             GROUP BY u1.friend_wechat_id
-            HAVING MAX(u1.chat_time) &gt;= addDays(toDateTime(#{startTime}), 5)
+            HAVING MAX(u1.chat_time) &gt;= addDays(toDateTime(toDate(#{startTime})), 5)
         )
     </select>
     <select id="findConversationsByDate" resultMap="ConversationResultMap">
@@ -106,27 +105,27 @@
             GROUP BY friend_wechat_id
             HAVING MIN(chat_time) >= #{date}
         ),
-             FirstHourMsgs AS (
-                 SELECT
-                     wm.friend_wechat_id,
-                     wm.content,
-                     wm.sender,
-                     wm.message_type,
-                     wm.chat_time,
-                     wm.wechat_nickname,
-                     wm.wechat_id,
-                     dateDiff('second', fmt.first_chat_time, wm.chat_time) AS seconds_after_first_msg
-                 FROM wechat_message wm
-                          JOIN FirstMsgTime fmt
-                               ON wm.friend_wechat_id = fmt.friend_wechat_id
-             )
+        FirstHourMsgs AS (
+            SELECT
+                wm.friend_wechat_id,
+                wm.content,
+                wm.sender,
+                wm.message_type,
+                wm.chat_time,
+                wm.wechat_nickname,
+                wm.wechat_id,
+                dateDiff('second', fmt.first_chat_time, wm.chat_time) AS seconds_after_first_msg
+            FROM wechat_message wm
+            JOIN FirstMsgTime fmt
+                ON wm.friend_wechat_id = fmt.friend_wechat_id
+        )
         SELECT
             friend_wechat_id AS wechatId,
             content AS message,
             CASE
                 WHEN sender = wechat_nickname THEN wechat_id
                 ELSE friend_wechat_id
-                END AS sender,
+            END AS sender,
             message_type AS type,
             fmt.first_chat_time AS chatTime
         FROM FirstHourMsgs
@@ -294,6 +293,51 @@
         WHERE friend_wechat_id = #{wechatId}
         ORDER BY chat_time DESC
         LIMIT 1
+    </select>
+    
+    <!-- 查找包含地址信息的微信用户ID -->
+    <select id="findWechatUserIdsWithAddressInfo" resultType="java.lang.String">
+        SELECT DISTINCT wm.friend_wechat_id
+        FROM aikang.wechat_message AS wm
+        WHERE wm.chat_time >= toDateTime(#{startDate})
+          AND content NOT LIKE '%北京%大兴%'
+          AND content NOT LIKE '%调理中心%'
+          AND content NOT LIKE '%国家级%'
+          AND content NOT LIKE '%国药%'
+          AND content NOT LIKE '%国医%'
+          AND content NOT LIKE '%公司%'
+          AND content NOT LIKE '%医院%'
+          AND content NOT LIKE '%省级%'
+          AND content NOT LIKE '%专员%'
+          AND content NOT LIKE '%购物%'
+          AND (
+                content LIKE '%省%市%'
+             OR content LIKE '%市%县%'
+             OR content LIKE '%市%乡%'
+             OR content LIKE '%市%镇%'
+             OR content LIKE '%市%村%'
+          )
+    </select>
+    
+    <!-- 根据微信ID查询用户的对话记录 -->
+    <select id="findConversationByWechatId" resultMap="ConversationResultMap">
+        SELECT
+            wm.friend_wechat_id AS wechatId,
+            wm.content AS message,
+            CASE
+                WHEN wm.sender = wm.wechat_nickname THEN wm.wechat_id
+                ELSE wm.friend_wechat_id
+            END AS sender,
+            wm.message_type AS type,
+            wm.chat_time AS chatTime,
+            MIN(wm.chat_time) OVER (PARTITION BY wm.friend_wechat_id) AS firstChatTime
+        FROM aikang.wechat_message wm
+        WHERE wm.friend_wechat_id = #{wechatId}
+          AND wm.content NOT LIKE '%你通过群发助手%'
+          AND wm.content NOT LIKE '%你已添加了%'
+          AND wm.content NOT LIKE '%添加到%'
+        ORDER BY wechatId, chatTime
+        LIMIT 300
     </select>
 
 </mapper>

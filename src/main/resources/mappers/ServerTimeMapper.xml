@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.ServerTimeMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.serverTime.ServerTimeMapper">
 
     <!-- ServerTime Result Map -->
-    <resultMap id="ServerTimeResultMap" type="org.panjy.servicemetricsplatform.entity.ServerTime">
+    <resultMap id="ServerTimeResultMap" type="org.panjy.servicemetricsplatform.entity.serverTime.ServerTime">
         <result column="colCltID" property="colCltID"/>
         <result column="colSerTi" property="colSerTi"/>
         <result column="createTime" property="createTime"/>
@@ -12,14 +12,14 @@
     </resultMap>
     
     <!-- OrderRetentionRate Result Map -->
-    <resultMap id="OrderRetentionRateResultMap" type="org.panjy.servicemetricsplatform.entity.OrderRetentionRate">
+    <resultMap id="OrderRetentionRateResultMap" type="org.panjy.servicemetricsplatform.entity.order.OrderRetentionRate">
         <result column="over_10_days_users" property="over10DaysUsers"/>
         <result column="over_13_days_users" property="over13DaysUsers"/>
         <result column="retention_rate" property="retentionRate"/>
     </resultMap>
 
     <!-- 插入或更新服务时间记录 -->
-    <insert id="insertOrUpdate" parameterType="org.panjy.servicemetricsplatform.entity.ServerTime">
+    <insert id="insertOrUpdate" parameterType="org.panjy.servicemetricsplatform.entity.serverTime.ServerTime">
         INSERT INTO aikang.tbl_ServerTime (colCltID, colSerTi, createTime, updateTime)
         VALUES (#{colCltID}, #{colSerTi}, #{createTime}, #{updateTime})
     </insert>
@@ -64,6 +64,19 @@
                round(countDistinctIf(colCltID, colSerTi > 1123200) / countDistinctIf(colCltID, colSerTi > 864000), 4), 
                0) AS retention_rate
         FROM aikang.tbl_ServerTime
+    </select>
+    
+    <!-- 计算指定月份的推单三日留存率 -->
+    <select id="calculateOrderRetentionRateByMonth" resultMap="OrderRetentionRateResultMap">
+        SELECT
+            countDistinctIf(colCltID, colSerTi > 864000) AS over_10_days_users,
+            countDistinctIf(colCltID, colSerTi > 1123200) AS over_13_days_users,
+            if(countDistinctIf(colCltID, colSerTi > 864000) > 0, 
+               round(countDistinctIf(colCltID, colSerTi > 1123200) / countDistinctIf(colCltID, colSerTi > 864000), 4), 
+               0) AS retention_rate
+        FROM aikang.tbl_ServerTime
+        WHERE toYear(createTime) = toYear(toDate(#{targetDate})) 
+          AND toMonth(createTime) = toMonth(toDate(#{targetDate}))
     </select>
 
 </mapper>

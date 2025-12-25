@@ -2,10 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.SalesRankingMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.order.SalesRankingMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="SalesRankingResultMap" type="org.panjy.servicemetricsplatform.entity.SalesRanking">
+    <resultMap id="SalesRankingResultMap" type="org.panjy.servicemetricsplatform.entity.order.SalesRanking">
         <result property="salesCode" column="sales_code"/>
         <result property="salesName" column="sales_name"/>
         <result property="totalSales" column="total_sales"/>
@@ -20,8 +20,8 @@
         FROM aikang.tbl_Order o
         INNER JOIN aikang.tbl_server_account a
             ON o.colEmpID = a.account_code
-        WHERE o.colOdrTim >= toStartOfWeek(toDate(#{date}))
-          AND o.colOdrTim &lt; addWeeks(toStartOfWeek(toDate(#{date})), 1)
+        WHERE o.colOdrTim >= toStartOfWeek(toDate(#{date}), 1)
+          AND o.colOdrTim &lt; addWeeks(toStartOfWeek(toDate(#{date}), 1), 1)
         GROUP BY 
             a.account_code, a.account_name
         ORDER BY 

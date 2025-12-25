@@ -1,6 +1,6 @@
 package org.panjy.servicemetricsplatform.config;
 
-import org.panjy.servicemetricsplatform.util.UnifiedScheduledTask;
+import org.panjy.servicemetricsplatform.task.UnifiedScheduledTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;

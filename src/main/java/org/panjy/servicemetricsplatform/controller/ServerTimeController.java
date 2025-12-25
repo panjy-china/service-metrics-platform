@@ -1,7 +1,7 @@
 package org.panjy.servicemetricsplatform.controller;
 
-import org.panjy.servicemetricsplatform.entity.ServerTime;
-import org.panjy.servicemetricsplatform.service.ServerTimeService;
+import org.panjy.servicemetricsplatform.entity.serverTime.ServerTime;
+import org.panjy.servicemetricsplatform.service.serverTime.ServerTimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

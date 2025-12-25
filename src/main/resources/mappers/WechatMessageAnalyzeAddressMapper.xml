@@ -2,10 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.analysis.WechatMessageAnalyzeAddressMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+    <resultMap id="BaseResultMap" type="org.panjy.servicemetricsplatform.entity.analysis.WechatMessageAnalyzeAddress">
         <result column="wechat_id" jdbcType="VARCHAR" property="wechatId" />
         <result column="msg_type" jdbcType="INTEGER" property="msgType" />
         <result column="wechat_time" jdbcType="BIGINT" property="wechatTime" />
@@ -19,7 +19,7 @@
     </sql>
     
     <!-- 插入单条记录 -->
-    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+    <insert id="insert" parameterType="org.panjy.servicemetricsplatform.entity.analysis.WechatMessageAnalyzeAddress">
         INSERT INTO wechat_message_a_analyze_address (
             wechat_id, msg_type, wechat_time, content, address
         ) VALUES (
@@ -107,7 +107,7 @@
     </select>
     
     <!-- 根据微信ID和时间更新记录 -->
-    <update id="updateByWechatIdAndTime" parameterType="org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress">
+    <update id="updateByWechatIdAndTime" parameterType="org.panjy.servicemetricsplatform.entity.analysis.WechatMessageAnalyzeAddress">
         UPDATE wechat_message_a_analyze_address
         SET 
             msg_type = #{msgType,jdbcType=INTEGER},
@@ -175,6 +175,40 @@
         SELECT wechat_id as wechatId, address as processedAddress
         FROM wechat_message_a_analyze_address
         WHERE address IS NOT NULL AND address != ''
+    </select>
+    
+    <!-- 获取在指定日期首次出现的微信用户数（新增人数） -->
+    <select id="countNewUsersByDate" resultType="java.lang.Integer">
+        SELECT COUNT(wechat_id) 
+        FROM (
+            SELECT wechat_id
+            FROM aikang.wechat_messages_a
+            GROUP BY wechat_id
+            HAVING MIN(create_time) &gt;= toDateTime(#{date} || ' 00:00:00')
+               AND MIN(create_time) &lt; addDays(toDateTime(#{date} || ' 00:00:00'), 1)
+        )
+    </select>
+    
+    <!-- 获取在指定日期范围内发送包含地址信息消息的微信用户数（成交人数） -->
+    <select id="countDealUsersByDateRange" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT wechat_id)
+        FROM aikang.wechat_messages_a wma 
+        WHERE wma.create_time &gt;= toDateTime(#{startDate} || ' 00:00:00')
+            AND wma.create_time &lt; addDays(toDateTime(#{startDate} || ' 00:00:00'), #{days})
+            AND (wma.content LIKE '%省%市%区%'
+                OR wma.content LIKE '%市%县%'
+                OR wma.content LIKE '%市%镇%'
+                OR wma.content LIKE '%市%村%'
+                OR wma.content LIKE '%市%小区%'
+                OR wma.content LIKE '%市%街道%'
+            )
+            AND wechat_id IN (
+                SELECT wechat_id
+                FROM aikang.wechat_messages_a
+                GROUP BY wechat_id
+                HAVING MIN(create_time) &gt;= toDateTime(#{startDate} || ' 00:00:00')
+                   AND MIN(create_time) &lt; addDays(toDateTime(#{startDate} || ' 00:00:00'), 1)
+            )
     </select>
     
 </mapper>

@@ -14,7 +14,7 @@ public final class Constants {
     }
     
     /** 账户数量常量 */
-    public static final int ACCOUNT_NUMBER = 31;
+    public static final int ACCOUNT_NUMBER = 27;
     
     /**
      * 时间格式常量

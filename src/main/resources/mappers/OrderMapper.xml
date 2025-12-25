@@ -1,52 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.OrderMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.order.OrderMapper">
 
     <!-- 查询指定日期的日下单用户数 -->
     <select id="getDailyOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) = toDate(#{date})
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) = toDate(#{date})
     </select>
 
     <!-- 查询指定日期前一天的日下单用户数 -->
     <select id="getPreviousDayOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) = toDate(#{date}) - INTERVAL 1 DAY
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) = toDate(#{date}) - INTERVAL 1 DAY
     </select>
 
     <!-- 查询指定日期所在周的下单用户数 -->
     <select id="getWeeklyOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}))
-          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date})), 1)
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}), 1)
+          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}), 1), 1)
     </select>
 
     <!-- 查询指定日期前一周的下单用户数 -->
     <select id="getPreviousWeekOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY)
-          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY), 1)
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY, 1)
+          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY, 1), 1)
     </select>
 
     <!-- 查询指定日期所在月的下单用户数 -->
     <select id="getMonthlyOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}))
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}))
           AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date})), 1)
     </select>
 
@@ -54,9 +49,8 @@
     <select id="getPreviousMonthOrderingUsers" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT o.colCltID) AS user_count
         FROM aikang.tbl_Order o
-        INNER JOIN aikang.tbl_server_account a
-            ON o.colEmpID = a.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH)
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH)
           AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH), 1)
     </select>
 
@@ -64,67 +58,66 @@
     <select id="getDailySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) = toDate(#{date})
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) = toDate(#{date})
+          AND o.colTotal > 0
     </select>
     
     <!-- 查询指定日期前一天的日销售总额 -->
     <select id="getPreviousDaySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) = toDate(#{date}) - INTERVAL 1 DAY
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) = toDate(#{date}) - INTERVAL 1 DAY
+          AND o.colTotal > 0
     </select>
 
     <!-- 查询指定日期所在自然周的销售总额 -->
     <select id="getWeeklySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}))
-        AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date})), 1)
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}), 1)
+          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}), 1), 1)
+          AND o.colTotal > 0
     </select>
     
     <!-- 查询指定日期前一周的销售总额 -->
     <select id="getPreviousWeeklySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY)
-        AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY), 1)
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY, 1)
+          AND toDate(o.colOdrTim) &lt; addWeeks(toStartOfWeek(toDate(#{date}) - INTERVAL 7 DAY, 1), 1)
+          AND o.colTotal > 0
     </select>
 
     <!-- 查询指定日期所在自然月的销售总额 -->
     <select id="getMonthlySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}))
-        AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date})), 1)
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}))
+          AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date})), 1)
+          AND o.colTotal > 0
     </select>
     
     <!-- 查询指定日期前一个月的销售总额 -->
     <select id="getPreviousMonthlySalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-        JOIN aikang.tbl_server_account sa ON o.colEmpID = sa.account_code
-        WHERE toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH)
-        AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH), 1)
-        AND o.colTotal > 0
+        WHERE o.colEmpID LIKE 'E%'
+          AND toDate(o.colOdrTim) >= toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH)
+          AND toDate(o.colOdrTim) &lt; addMonths(toStartOfMonth(toDate(#{date}) - INTERVAL 1 MONTH), 1)
+          AND o.colTotal > 0
     </select>
 
     <!-- Get total sales amount for specified time period -->
     <select id="getTotalSalesAmount" resultType="java.math.BigDecimal">
         SELECT SUM(colTotal) as totalAmount
         FROM aikang.tbl_Order o
-                 JOIN aikang.tbl_server_account sa
-                      ON o.colEmpID = sa.account_code
-        WHERE o.colOdrTim >= #{startTime}
+        WHERE o.colEmpID LIKE 'E%'
+          AND o.colOdrTim >= #{startTime}
           AND o.colOdrTim &lt;= #{endTime}
           AND o.colTotal > 0
     </select>
@@ -140,13 +133,12 @@
 
     <!-- Get total order count for specified time period -->
     <select id="getTotalOrderCount" resultType="java.lang.Long">
-        SELECT COUNT(*) AS orderCount
-        FROM aikang.tbl_Order o
-                 JOIN aikang.tbl_server_account sa
-                      ON o.colEmpID = sa.account_code
-        WHERE o.colOdrTim <![CDATA[ >= ]]> #{startTime}
-          AND o.colOdrTim <![CDATA[ <= ]]> #{endTime}
-          AND o.colTotal > 0
+            SELECT COUNT(*) AS orderCount
+            FROM aikang.tbl_Order o
+            WHERE o.colEmpID LIKE 'E%'
+              AND o.colOdrTim <![CDATA[ >= ]]> #{startTime}
+              AND o.colOdrTim <![CDATA[ <= ]]> #{endTime}
+              AND o.colTotal > 0
     </select>
     
     <!-- Get earliest order time for specified client -->
@@ -161,6 +153,22 @@
         SELECT MAX(colOdrTim) as latestTime
         FROM aikang.tbl_Order
         WHERE colCltID = #{clientId}
+    </select>
+    
+    <!-- Get earliest sales order time for specified client (colEmpID starts with 'E') -->
+    <select id="getEarliestSalesOrderTimeByClientId" resultType="java.time.LocalDateTime">
+        SELECT MIN(colOdrTim) as earliestTime
+        FROM aikang.tbl_Order
+        WHERE colCltID = #{clientId}
+          AND colEmpID LIKE 'E%'
+    </select>
+    
+    <!-- Check if client has sales orders with colEmpID LIKE 'E%' -->
+    <select id="hasSalesOrders" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM aikang.tbl_Order
+        WHERE colCltID = #{clientId}
+          AND colEmpID LIKE 'E%'
     </select>
     
     <!-- Get earliest order time for all clients -->
@@ -191,7 +199,15 @@
             WHERE colCltID IS NOT NULL AND colCltID != ''
             GROUP BY colCltID
         ) t
-        WHERE firstOrderTime &gt;= #{date}
+        WHERE firstOrderTime &gt;= toDate(#{date})
+    </select>
+    
+    <!-- Get client IDs with orders after specified date -->
+    <select id="getClientIdsWithOrdersAfterDate" resultType="java.lang.String">
+        SELECT DISTINCT colCltID
+        FROM aikang.tbl_Order
+        WHERE colOdrTim &gt;= toDate(#{date})
+          AND colCltID IS NOT NULL AND colCltID != ''
     </select>
     
     <!-- 根据处理后的地址串进行模糊查询，返回匹配到的第一条记录的客户ID -->
@@ -200,6 +216,14 @@
         FROM aikang.tbl_Order
         WHERE colAddress LIKE CONCAT('%', #{processedAddress}, '%')
         LIMIT 1
+    </select>
+    <select id="getNewClientIdsByMothy" resultType="java.lang.String">
+        SELECT
+            DISTINCT colCltID
+        FROM aikang.tbl_Order
+        GROUP BY colCltID
+        HAVING toYear(MIN(colOdrTim)) = toYear(toDate(#{date}))
+           AND toMonth(MIN(colOdrTim)) = toMonth(toDate(#{date}));
     </select>
 
 </mapper>

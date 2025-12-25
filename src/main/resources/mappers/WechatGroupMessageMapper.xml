@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.panjy.servicemetricsplatform.mapper.WechatGroupMessageMapper">
+<mapper namespace="org.panjy.servicemetricsplatform.mapper.message.WechatGroupMessageMapper">
 
     <select id="findActiveUsers" resultType="java.lang.String">
         SELECT DISTINCT sender
@@ -33,7 +33,7 @@
             -- 第二步：排除 7 天内仍然活跃的用户
             SELECT u1.wechat_id
             FROM wechat_group_message u1
-            WHERE toDateTime(u1.wechat_time / 1000) &lt;= addDays(toDateTime(#{startTime}), 7)
+            WHERE toDateTime(u1.wechat_time / 1000) &lt;= addDays(toDateTime(toDate(#{startTime})), 7)
             GROUP BY u1.wechat_id
             HAVING MAX(toDate(toDateTime(u1.wechat_time / 1000))) &gt;= addDays(toDate(#{startTime}), 5)
         )

@@ -1,5 +1,5 @@
-# 使用OpenJDK 21作为基础镜像
-FROM openjdk:21-jdk-slim
+# 使用你本地已有的 Alpine + OpenJDK 21 镜像（无需联网拉取）
+FROM alpine/java:21-jdk
 
 LABEL maintainer="service-metrics-platform" \
       version="0.0.1-SNAPSHOT" \
@@ -7,36 +7,36 @@ LABEL maintainer="service-metrics-platform" \
 
 WORKDIR /app
 
-# 安装必要的工具（仅安装最基础的）
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
- && rm -rf /var/lib/apt/lists/*
+# 创建应用用户（Alpine 语法）
+RUN addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S appuser -G appuser
 
-# 创建应用用户
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# 设置时区（必须临时安装 tzdata）
+# 使用阿里云镜像源加速下载（避免 dl-cdn.alpinelinux.org 超时）
+RUN sed -i 's/dl-cpn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    apk del tzdata
 
-# 设置时区
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# JVM 参数 & Spring 配置
+# JVM & Spring 配置
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV SERVER_PORT=9712
 
-# 复制 jar
+# 复制应用 JAR
 COPY target/service-metrics-platform-0.0.1-SNAPSHOT.jar app.jar
 
-# 创建日志目录
+# 创建日志目录并授权
 RUN mkdir -p /app/logs && chown -R appuser:appuser /app
 
+# 切换到非 root 用户
 USER appuser
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:${SERVER_PORT}/api/order-metrics/health || exit 1
+# ✅ 健康检查已移除（不再需要 curl）
 
-EXPOSE 9712
+EXPOSE ${SERVER_PORT}
 
-# 启动应用
-ENTRYPOINT exec java $JAVA_OPTS -jar app.jar
+# 启动命令
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

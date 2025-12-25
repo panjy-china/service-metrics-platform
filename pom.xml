@@ -32,6 +32,20 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Gson for JSON -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <!-- Apache HttpClient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+
         <!-- Spring Boot Web (已包含 MVC + JSON + 嵌入式 Tomcat) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -1,10 +1,10 @@
 package org.panjy.servicemetricsplatform.controller;
 
-import org.panjy.servicemetricsplatform.entity.Message;
-import org.panjy.servicemetricsplatform.entity.WechatMessageAnalyzeAddress;
-import org.panjy.servicemetricsplatform.mapper.MessageMapper;
-import org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper;
-import org.panjy.servicemetricsplatform.service.LLMAnalysisService;
+import org.panjy.servicemetricsplatform.entity.message.Message;
+import org.panjy.servicemetricsplatform.entity.analysis.WechatMessageAnalyzeAddress;
+import org.panjy.servicemetricsplatform.mapper.message.MessageMapper;
+import org.panjy.servicemetricsplatform.mapper.analysis.WechatMessageAnalyzeAddressMapper;
+import org.panjy.servicemetricsplatform.service.analysis.LLMAnalysisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;

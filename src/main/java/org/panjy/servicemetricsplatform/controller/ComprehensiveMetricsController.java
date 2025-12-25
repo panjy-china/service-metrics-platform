@@ -1,10 +1,14 @@
 package org.panjy.servicemetricsplatform.controller;
 
-import org.panjy.servicemetricsplatform.service.*;
-import org.panjy.servicemetricsplatform.mapper.WechatMessageAnalyzeAddressMapper;
-import org.panjy.servicemetricsplatform.entity.OrderStatistics;
-import org.panjy.servicemetricsplatform.entity.OrderingUserStats;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.panjy.servicemetricsplatform.mapper.analysis.WechatMessageAnalyzeAddressMapper;
+import org.panjy.servicemetricsplatform.entity.order.OrderStatistics;
+import org.panjy.servicemetricsplatform.service.analysis.ClientService;
+import org.panjy.servicemetricsplatform.service.analysis.LLMAnalysisService;
+import org.panjy.servicemetricsplatform.service.newuser.FriendFirstChatService;
+import org.panjy.servicemetricsplatform.service.newuser.StrategicLayerService;
+import org.panjy.servicemetricsplatform.service.order.OrderService;
+import org.panjy.servicemetricsplatform.service.order.OrderStatisticsService;
+import org.panjy.servicemetricsplatform.service.order.SalesRankingService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -108,9 +113,22 @@ public class ComprehensiveMetricsController {
 
             // 将日期改为昨日
             Calendar cal = Calendar.getInstance();
-            cal.setTime(date);
+            cal.set(2025, 9, 15);  // 6月 = 5（因为从0开始）
+//            cal.setTime(date);
             cal.add(Calendar.DAY_OF_MONTH, -1);
             Date yesterday = cal.getTime();
+
+            cal = Calendar.getInstance();
+            cal.set(2025, 9, 15);  // 6月 = 5（因为从0开始）
+//            cal.setTime(date);
+            cal.add(Calendar.DAY_OF_MONTH, -10);
+            Date last10Days = cal.getTime();
+
+            cal = Calendar.getInstance();
+            cal.set(2025, 9, 15);  // 6月 = 5（因为从0开始）
+//            cal.setTime(date);
+            cal.add(Calendar.DAY_OF_MONTH, -20);
+            Date last20Days = cal.getTime();
 
             cal.add(Calendar.MONTH, -1);
             Date lastMonth = cal.getTime();
@@ -131,13 +149,13 @@ public class ComprehensiveMetricsController {
             getRetentionRateData(yesterday, comprehensiveData);
 
             // 4. 获取流失率数据（七日）
-            getChurnRateData(yesterday, comprehensiveData);
+            getChurnRateData(last10Days, comprehensiveData);
 
             // 5. 获取转化率数据（十日、十五日）
             getConversionRateData(lastMonth, comprehensiveData);
 
             // 6. 获取订单相关数据（人均成交客户数及成交销售额及其增长比例）
-            getOrderMetricsData(comprehensiveData);
+            getOrderMetricsData(yesterday, comprehensiveData);
 
             // 7. 获取服务时间数据（平均服务天数及成交天数以及其增长比例）
             getServiceTimeData(lastMonth, comprehensiveData);
@@ -156,6 +174,9 @@ public class ComprehensiveMetricsController {
 
             // 12. 获取指定日期的销售额自然周、自然月排行榜
             getSalesRankingData(yesterday, comprehensiveData);
+
+            // 13. 获取销售人员数量
+            getSalesCountData(comprehensiveData);
 
             return ResponseEntity.ok(createSuccessResponse("查询成功", comprehensiveData));
 
@@ -339,12 +360,12 @@ public class ComprehensiveMetricsController {
             // 十日转化率 - 获取指定日期之后用户的十日成交转换率
             Double tenDayConversion = orderService.calculateTenDayConversionRate(localDateTime);
             data.put("tenDayConversionRate", tenDayConversion != null ?
-                BigDecimal.valueOf(tenDayConversion).setScale(4, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO);
+                BigDecimal.valueOf(tenDayConversion * 100).setScale(2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO);
 
             // 十五日转化率 - 获取指定日期之后用户的十五日成交转换率
             Double fifteenDayConversion = orderService.calculateFifteenDayConversionRate(localDateTime);
             data.put("fifteenDayConversionRate", fifteenDayConversion != null ?
-                BigDecimal.valueOf(fifteenDayConversion).setScale(4, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO);
+                BigDecimal.valueOf(fifteenDayConversion * 100).setScale(2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO);
 
             System.out.println("转化率数据获取完成");
         } catch (Exception e) {
@@ -357,23 +378,30 @@ public class ComprehensiveMetricsController {
     /**
      * 获取订单相关数据（人均成交客户数及成交销售额及其增长比例）
      *
+     * @param date 查询日期
      * @param data 存储订单相关数据的Map对象
      */
-    private void getOrderMetricsData(Map<String, Object> data) {
+    private void getOrderMetricsData(Date date, Map<String, Object> data) {
         try {
-            System.out.println("开始获取订单相关数据");
+            System.out.println("开始获取订单相关数据，日期: " + new SimpleDateFormat("yyyy-MM-dd").format(date));
 
-            // 当月人均成交订单数 - 获取当前月份的人均成交订单数
-            BigDecimal avgOrders = orderService.calculateCurrentMonthAvgOrdersPerCustomer();
+            // 将Date转换为LocalDate
+            LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            
+            // 获取指定日期所在月份
+            YearMonth targetMonth = YearMonth.from(localDate);
+            String targetMonthStr = targetMonth.toString();
+            
+            // 获取指定月份的人均成交订单数
+            BigDecimal avgOrders = orderService.calculateMonthlyAvgOrdersPerCustomer(targetMonthStr);
             data.put("currentMonthAvgOrdersPerCustomer", avgOrders);
 
-            // 当月人均成交销售额 - 获取当前月份的人均成交销售额
-            BigDecimal avgSales = orderService.calculateCurrentMonthAvgSalesPerCustomer();
+            // 获取指定月份的人均成交销售额
+            BigDecimal avgSales = orderService.calculateMonthlySalesPerCustomer(targetMonthStr);
             data.put("currentMonthAvgSalesPerCustomer", avgSales);
 
             // 获取上月数据用于计算增长比例
-            java.time.YearMonth currentMonth = java.time.YearMonth.now();
-            java.time.YearMonth previousMonth = currentMonth.minusMonths(1);
+            YearMonth previousMonth = targetMonth.minusMonths(1);
             String previousMonthStr = previousMonth.toString();
 
             BigDecimal previousAvgOrders = orderService.calculateMonthlyAvgOrdersPerCustomer(previousMonthStr);
@@ -573,11 +601,18 @@ public class ComprehensiveMetricsController {
             // 将Date转换为LocalDate
             LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
+            // 调用OrderService获取日平均客单价
+            BigDecimal dailyAverageOrderValue = orderService.calculateDailyAverageOrderValue(localDate);
+
             // 调用OrderService获取周平均客单价
             BigDecimal weeklyAverageOrderValue = orderService.calculateWeeklyAverageOrderValue(localDate);
 
             // 调用OrderService获取月平均客单价
             BigDecimal monthlyAverageOrderValue = orderService.calculateMonthlyAverageOrderValue(localDate);
+
+            // 调用OrderService获取前一日平均客单价
+            LocalDate previousDay = localDate.minusDays(1);
+            BigDecimal previousDailyAverageOrderValue = orderService.calculateDailyAverageOrderValue(previousDay);
 
             // 调用OrderService获取前一周平均客单价
             BigDecimal previousWeeklyAverageOrderValue = orderService.calculatePreviousWeeklyAverageOrderValue(localDate);
@@ -586,34 +621,43 @@ public class ComprehensiveMetricsController {
             BigDecimal previousMonthlyAverageOrderValue = orderService.calculatePreviousMonthlyAverageOrderValue(localDate);
 
             // 计算增长率
+            BigDecimal dailyGrowthRate = calculateGrowthRate(dailyAverageOrderValue, previousDailyAverageOrderValue);
             BigDecimal weeklyGrowthRate = calculateGrowthRate(weeklyAverageOrderValue, previousWeeklyAverageOrderValue);
             BigDecimal monthlyGrowthRate = calculateGrowthRate(monthlyAverageOrderValue, previousMonthlyAverageOrderValue);
 
             // 创建平均客单价Map
             Map<String, Object> averageOrderValueStats = new HashMap<>();
+            averageOrderValueStats.put("dailyAverageOrderValue", dailyAverageOrderValue);
             averageOrderValueStats.put("weeklyAverageOrderValue", weeklyAverageOrderValue);
             averageOrderValueStats.put("monthlyAverageOrderValue", monthlyAverageOrderValue);
+//            averageOrderValueStats.put("previousDailyAverageOrderValue", previousDailyAverageOrderValue);
 //            averageOrderValueStats.put("previousWeeklyAverageOrderValue", previousWeeklyAverageOrderValue);
 //            averageOrderValueStats.put("previousMonthlyAverageOrderValue", previousMonthlyAverageOrderValue);
+            averageOrderValueStats.put("dailyGrowthRate", dailyGrowthRate);
             averageOrderValueStats.put("weeklyGrowthRate", weeklyGrowthRate);
             averageOrderValueStats.put("monthlyGrowthRate", monthlyGrowthRate);
+//            averageOrderValueStats.put("dailyGrowthRatePercent", dailyGrowthRate + "%");
 //            averageOrderValueStats.put("weeklyGrowthRatePercent", weeklyGrowthRate + "%");
 //            averageOrderValueStats.put("monthlyGrowthRatePercent", monthlyGrowthRate + "%");
 
             // 将平均客单价放入返回结果中
             data.put("averageOrderValueStats", averageOrderValueStats);
 
-            System.out.println("周、月平均客单价获取完成");
+            System.out.println("日、周、月平均客单价获取完成");
         } catch (Exception e) {
-            System.err.println("获取周、月平均客单价失败: " + e.getMessage());
+            System.err.println("获取日、周、月平均客单价失败: " + e.getMessage());
             // 发生异常时放入默认值
             Map<String, Object> errorStats = new HashMap<>();
+            errorStats.put("dailyAverageOrderValue", BigDecimal.ZERO);
             errorStats.put("weeklyAverageOrderValue", BigDecimal.ZERO);
             errorStats.put("monthlyAverageOrderValue", BigDecimal.ZERO);
+            // errorStats.put("previousDailyAverageOrderValue", BigDecimal.ZERO);
             // errorStats.put("previousWeeklyAverageOrderValue", BigDecimal.ZERO);
             // errorStats.put("previousMonthlyAverageOrderValue", BigDecimal.ZERO);
+            errorStats.put("dailyGrowthRate", BigDecimal.ZERO);
             errorStats.put("weeklyGrowthRate", BigDecimal.ZERO);
             errorStats.put("monthlyGrowthRate", BigDecimal.ZERO);
+            // errorStats.put("dailyGrowthRatePercent", "0%");
             // errorStats.put("weeklyGrowthRatePercent", "0%");
             // errorStats.put("monthlyGrowthRatePercent", "0%");
             data.put("averageOrderValueStats", errorStats);
@@ -646,6 +690,29 @@ public class ComprehensiveMetricsController {
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("error", "获取销售排行榜数据失败: " + e.getMessage());
             data.put("salesRankingData", errorResult);
+        }
+    }
+
+    /**
+     * 获取销售人员数量
+     *
+     * @param data 存储销售人员数量的Map对象
+     */
+    private void getSalesCountData(Map<String, Object> data) {
+        try {
+            System.out.println("开始获取销售人员数量");
+
+            // 调用OrderService获取实际销售人员数量
+            Long salesCount = orderService.getActualSalesCount();
+
+            // 将销售人员数量放入返回结果中
+            data.put("salesCount", salesCount);
+
+            System.out.println("销售人员数量获取完成: " + salesCount);
+        } catch (Exception e) {
+            System.err.println("获取销售人员数量失败: " + e.getMessage());
+            // 发生异常时放入默认值
+            data.put("salesCount", 27L);
         }
     }
 
